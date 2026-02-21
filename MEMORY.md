@@ -255,24 +255,82 @@ ID   漢字    ID   漢字    ID   漢字    ID   漢字    ID   漢字
 
 ---
 
-## 頭像系統 (部分分析, 未完成)
+## 頭像系統 (部分完成)
 
-### 已知事項
-- 頭像為 6×6 tiles = 48×48 pixels = 36 tiles × 16 bytes = 576 bytes/頭像
-- Tile 資料散佈於 PRG ROM banks 3–8
-- 非連續存放, 透過拼接表 (nametable mapping) 組合
-- Age 欄位 (原先誤判為 Portrait Index) 有 60 種不同值
+### 概要
+- 總共 **81** 個主要頭像 (獨立 tile 資料)
+- 每個頭像 = 6×6 tiles = 48×48 pixels
+- Tile 資料存放於 PRG ROM Banks 4-6
+- 255 個武將共用這些頭像 (多人共用同一頭像)
 
-### 關鍵程式碼位置
-- Bank 切換: $C546 (檔案偏移 0x3C556)
-- Tile 複製: $C280 (檔案偏移 0x3C290)
-- 變數 $0052 存放 bank 編號
-- 拼接表候選: Bank 6 (0x1B0FE–0x1B2CE), 16-byte blocks, 值域 0x64–0x87
+### 頭像指標表
+
+**位置**: `0x1BC38` (81 entries × 4 bytes)
+
+每筆記錄結構:
+```
+Offset  Size  欄位
++0      1     Bank          資料所在 bank (4-6)
++1      1     TileCount     tile 數量 (28-36)
++2      2     Address       bank 內位址 (little-endian, $8xxx)
+```
+
+檔案偏移計算: `file_offset = bank × 0x4000 + (addr - 0x8000) + 0x10`
+
+### Tile 排列系統
+
+頭像分為兩類:
+
+**1. 36-tile 頭像 (32 個)**
+- 索引: 6, 7, 8, 24, 25, 26, 29, 35, 38, 40, 41, 43, 44, 45, 46, 47, 49, 51, 58, 59, 61, 66, 68, 69, 70, 72, 74, 75, 76, 77, 79, 80
+- 使用標準 2×2 metatile 排列:
+```
+[ 1  2][ 5  6][ 9 10]
+[ 3  4][ 7  8][11 12]
+[13 14][17 18][21 22]
+[15 16][19 20][23 24]
+[25 26][29 30][33 34]
+[27 28][31 32][35 36]
+```
+
+**2. <36-tile 頭像 (49 個)**
+- tile 數量: 28-35 (重複利用 tile 以節省空間)
+- 使用排列表指定各位置的 tile 編號
+
+### 排列表
+
+**位置**: `0x1B140` (按頭像索引存取)
+
+每筆排列是 36 bytes，對應 6×6 的 tile 位置。
+- 值為 PPU tile index (0x64-0x87)
+- 轉換為 ROM tile 編號: `rom_tile = ppu_value - 0x63`
+- 值 0x64 (ROM tile 1) 通常代表空白/重複區域
+
+**注意**: 排列表直接以頭像索引存取 (arrangement_offset = 0x1B140 + portrait_idx × 36)。
+部分排列資料無效 (max_tile > tile_count)，此時回退使用標準排列。
 
 ### 未解決問題
-- 拼接表資料顯示 4×4 結構, 但頭像實際為 6×6, 存在矛盾
-- 需要追蹤遊戲顯示頭像的完整流程才能確認 tile 拼接方式
-- 頭像索引與 tile 資料的對應關係尚未建立
+- 部分頭像的排列資料仍不正確 (約 30-40% 可能有問題)
+- 武將→頭像的映射表尚未找到
+- 可能存在「共用元件」頭像系統 (tiles 分散存放，用於更多武將)
+
+### NES Tile 格式
+- 每個 tile: 8×8 pixels, 16 bytes
+- 2 bitplanes, 每個 8 bytes
+- 像素值 = plane0_bit + (plane1_bit << 1)
+
+### 色盤
+```
+Index 0: (0, 0, 0)         黑色
+Index 1: (247, 216, 165)   淺膚色
+Index 2: (234, 158, 34)    深膚色
+Index 3: (255, 255, 255)   白色
+```
+
+### 匯出工具
+- **portrait_export.py**: 匯出所有 81 個頭像
+- 輸出: `kanji_output/portraits/portrait_XX.png`
+- 總覽: `kanji_output/portrait_atlas.png`
 
 ---
 
@@ -281,21 +339,25 @@ ID   漢字    ID   漢字    ID   漢字    ID   漢字    ID   漢字
 | 檔案 | 說明 |
 |------|------|
 | `sangokushi_extract_v2.py` | 武將資料解析主程式 |
+| `kanji_export.py` | 漢字字型匯出工具 |
+| `portrait_export.py` | 頭像匯出工具 |
 | `Sangokushi (Japan)_characters_v2.csv` | 匯出的 CSV |
 | `Sangokushi (Japan)_characters_v2.xlsx` | 匯出的 Excel (含格式, 需 openpyxl) |
 | `光榮三國志系列武將登場統計 - 能力表.csv` | 外部參考資料, 用於比對武將姓名 |
 | `CLAUDE.md` | Claude Code 專案指示 |
 | `MEMORY.md` | 本檔案 — 研究記錄 |
 | `docs/DATA_FORMAT.md` | 資料格式詳細文件 |
+| `docs/KANJI_TILES_ANALYSIS.md` | 漢字 tile 映射分析 |
 
 ---
 
 ## 下一步待辦
 
-1. **頭像匯出**: 追蹤遊戲 6502 程式碼中頭像顯示流程, 建立 portrait index → tile data 的完整映射, 匯出 48×48 頭像圖片
+1. ~~**頭像匯出**: 追蹤遊戲 6502 程式碼中頭像顯示流程, 建立 portrait index → tile data 的完整映射, 匯出 48×48 頭像圖片~~ ✓ 已完成
 2. **城市名稱表**: 尋找 ROM 中城市 ID → 城市名稱的對照表
 3. ~~**武將姓名表**: 尋找 ROM 中武將姓名的存放位置~~ ✓ 已找到 (0x3A314, 半角片假名編碼)
 4. **未確認欄位**: 透過遊戲測試確認 B1 (Body) 和 B5 (Luck) 的實際用途
 5. ~~**完善角色對照**: 補齊更多角色的序號-姓名-假名對應~~ ✓ 已透過外部 CSV 完成 255/256 筆
 6. **舞台配置資料**: 若需確認不同舞台的武將配置，可用模擬器調試功能追蹤遊戲選擇舞台時的記憶體變化
 7. ~~**姓名表未知欄位**: 解析姓名記錄中 +8 到 +14 的 7 bytes 用途~~ ✓ 已確認 +8/+10/+12 為漢字 tile ID，建立 238 字對照表
+8. **頭像與武將對應**: 找出頭像索引 (0-59) 與武將索引 (0-255) 的對應關係
