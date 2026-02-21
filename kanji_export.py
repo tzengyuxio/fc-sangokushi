@@ -6,10 +6,12 @@ FC 三國志 漢字字型匯出工具
 根據逆向工程分析結果，從 ROM 匯出 16×16 漢字圖形。
 
 映射公式 (Page 0):
-  PRG_ROM_offset = 0x205E4 + (tile_id + 0x30) × 16
+  PRG_ROM_offset = 0x20004 + tile_id × 32
   File_offset = PRG_ROM_offset + 0x10 (iNES header)
 
-每個漢字 = 4 個連續 8×8 tiles = 64 bytes
+每個漢字 = 4 個 8×8 tiles = 32 bytes (只有 Plane 0)
+4 tiles 排列: [0][1] 在 offset+0, offset+8
+              [2][3] 在 offset+16, offset+24
 """
 
 import os
@@ -24,11 +26,14 @@ except ImportError:
 # ─── 常數 ────────────────────────────────────────────────────
 
 # 漢字 tile 基址 (PRG ROM)
-KANJI_BASE_PRG = 0x205E4
+# 每個漢字 = 32 bytes (4 tiles × 8 bytes，只有 Plane 0)
+# 公式: PRG_offset = 0x20004 + tile_id × 32
+KANJI_BASE_PRG = 0x20004
 KANJI_BASE_FILE = KANJI_BASE_PRG + 0x10  # 加上 iNES header
 
-# PPU tile index 偏移量
-PPU_OFFSET = 0x30
+# 每個漢字的大小 (bytes)
+KANJI_SIZE = 32  # 4 tiles × 8 bytes
+TILE_SIZE = 8    # 只有 Plane 0
 
 # 姓名表位置
 NAME_TABLE_ADDR = 0x3A314
@@ -43,7 +48,7 @@ PALETTE = [
 ]
 
 
-def decode_tile_8x8(tile_data):
+def decode_tile_8x8(tile_data, monochrome=False):
     """
     解碼 NES 8×8 tile (16 bytes) 為像素陣列
 
@@ -51,15 +56,23 @@ def decode_tile_8x8(tile_data):
     - Plane 0: bytes 0-7
     - Plane 1: bytes 8-15
     - 每個像素 = bit from plane0 + (bit from plane1 << 1)
+
+    Args:
+        tile_data: tile 資料 (8 或 16 bytes)
+        monochrome: True 時只使用 Plane 0 (黑白模式，用於漢字)
     """
-    if len(tile_data) < 16:
+    if len(tile_data) < 8:
         return [[0] * 8 for _ in range(8)]
 
     pixels = []
     for y in range(8):
         row = []
         plane0 = tile_data[y]
-        plane1 = tile_data[y + 8]
+        # 黑白模式: Plane 1 = Plane 0 (遊戲中漢字的實際處理方式)
+        if monochrome or len(tile_data) < 16:
+            plane1 = plane0
+        else:
+            plane1 = tile_data[y + 8]
         for x in range(7, -1, -1):
             bit0 = (plane0 >> x) & 1
             bit1 = (plane1 >> x) & 1
@@ -76,34 +89,36 @@ def decode_kanji_16x16(rom, tile_id, page=0):
     排列方式: [0][1]
               [2][3]
 
+    ROM 儲存格式: 每個 tile 只有 8 bytes (Plane 0)
+    遊戲載入時會將 Plane 0 複製到 Plane 1 (黑白顯示)
+
     Args:
         rom: ROM 資料
         tile_id: 漢字 tile ID (0x01-0xFF for page 0, 0x01-0x42 for page 1)
         page: 0 或 1
 
     Returns:
-        16×16 像素陣列
+        16×16 像素陣列，若 page 1 則回傳 None
     """
     if page == 1:
-        # Page 1 的基址可能不同，暫時使用估算值
-        # TODO: 需要進一步追蹤確認
-        base = KANJI_BASE_FILE + 256 * 64  # 假設在 Page 0 之後
-    else:
-        base = KANJI_BASE_FILE
+        # Page 1 的基址尚未確認，需要用 Mesen 追蹤
+        # TODO: 找一個 Page 1 的漢字，追蹤其 ROM 位置
+        return None
 
-    # 計算 ROM 偏移
-    ppu_index = tile_id + PPU_OFFSET
-    offset = base + ppu_index * 16
+    # 計算 ROM 偏移: offset = base + tile_id × 32
+    offset = KANJI_BASE_FILE + tile_id * KANJI_SIZE
 
-    # 讀取 4 個連續 tiles (64 bytes)
+    # 讀取 4 個 tiles (每個 8 bytes，共 32 bytes)
+    # 排列: [0][1] 在 offset+0, offset+8
+    #       [2][3] 在 offset+16, offset+24
     tiles = []
     for i in range(4):
-        tile_offset = offset + i * 16
-        if tile_offset + 16 > len(rom):
+        tile_offset = offset + i * TILE_SIZE
+        if tile_offset + TILE_SIZE > len(rom):
             tiles.append([[0] * 8 for _ in range(8)])
         else:
-            tile_data = rom[tile_offset:tile_offset + 16]
-            tiles.append(decode_tile_8x8(tile_data))
+            tile_data = rom[tile_offset:tile_offset + TILE_SIZE]
+            tiles.append(decode_tile_8x8(tile_data, monochrome=True))
 
     # 組合成 16×16
     pixels = []
@@ -216,18 +231,21 @@ def export_individual_kanji(rom, output_dir, scale=4):
 
     for tile_id, page in unique_tiles:
         pixels = decode_kanji_16x16(rom, tile_id, page=page)
+
+        if pixels is None:
+            # Page 1 尚未支援
+            page1_count += 1
+            continue
+
         char_img = pixels_to_image(pixels, scale=scale)
 
         filename = f"kanji_p{page}_{tile_id:02X}.png"
         filepath = os.path.join(output_dir, filename)
         char_img.save(filepath)
+        page0_count += 1
 
-        if page == 0:
-            page0_count += 1
-        else:
-            page1_count += 1
-
-    print(f"已匯出 Page 0: {page0_count} 個, Page 1: {page1_count} 個")
+    print(f"已匯出 Page 0: {page0_count} 個")
+    print(f"Page 1 尚未支援: {page1_count} 個 (需追蹤 ROM 位置)")
     print(f"儲存於: {output_dir}/")
 
 
