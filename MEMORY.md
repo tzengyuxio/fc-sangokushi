@@ -746,6 +746,26 @@ Group C 特殊之處在於包含多種框架 tile 組:
 1. ~~其他 Group 基底~~: 已確認 Groups A-E 的基底位址
 2. ~~portrait_matcher 工具~~: 可自動從遊戲截圖識別 layout 和變體索引
 
+### 調試進度 (進行中)
+
+**目標**: 找出 portrait_index 如何轉換為頭像 tile 資料的程式邏輯
+
+**已嘗試的方法**:
+1. ROM 搜尋 `SBC #$51` / `CMP #$51` - 找到一些位置但無法確認是頭像相關
+2. 搜尋引用 $BC38 (標準指標表) 的程式碼 - 未在 Bank 7 找到
+3. Mesen Lua 腳本監視 PRG ROM 讀取 - 腳本已載入但顯示頭像時無輸出
+
+**可能原因**:
+- 頭像資料可能在遊戲初始化時已載入 RAM，之後從 RAM 讀取
+- 需要監視 CPU Memory (RAM) 而非 PRG ROM
+- 或需要監視 PPU 寫入來追蹤 tile 繪製
+
+**下次待辦**:
+1. 嘗試監視 CPU RAM ($0000-$07FF) 的寫入，找出頭像資料載入時機
+2. 或監視 PPU Memory ($0000-$1FFF) 的寫入，追蹤 tile pattern 載入
+3. 嘗試在遊戲啟動時就開始監視，而非等到顯示頭像
+4. 考慮使用 Mesen 的 Trace Logger 功能記錄完整執行流程
+
 ### 工具
 
 **tools/portrait_matcher.py** - 自動匹配截圖與 ROM tiles
