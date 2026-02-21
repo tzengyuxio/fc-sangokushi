@@ -28,9 +28,9 @@ NAME_TABLE = 0x3A314
 NAME_RECORD_SIZE = 15
 CHARACTER_COUNT = 256
 
-# 排列表
-ARRANGEMENT_TABLE = 0x1B140
-ARRANGEMENT_COUNT = 78  # 排列表中的條目數 (原認為 60，實際延伸到頭像指標表)
+# 排列表 (實際起始位置比原先認為的更早)
+ARRANGEMENT_TABLE = 0x1B0D4
+ARRANGEMENT_COUNT = 81  # 與頭像數量相同，1:1 對應
 
 # 色盤 (從遊戲截圖校準)
 PALETTE = [
@@ -54,24 +54,8 @@ STANDARD_LAYOUT = [
 STANDARD_36_PORTRAITS = {6, 7, 8, 24, 25, 26, 29, 35, 38, 40, 41, 43, 44, 45, 46, 47, 49, 51, 58, 59,
                          61, 66, 68, 69, 70, 72, 74, 75, 76, 77, 79, 80}
 
-# P01 的自訂排列 (不在排列表中，手動校正)
-PORTRAIT_01_LAYOUT = [
-    [ 1,  2,  5,  6,  9, 10],
-    [ 3,  4,  7,  8, 11, 12],
-    [10, 13, 15, 16, 19, 20],
-    [10, 14, 17, 18, 21, 22],
-    [10, 23, 26, 27, 30, 10],
-    [24, 25, 28, 29, 31, 32],
-]
-
-# 頭像→排列映射
-# 通用規則: arrangement_index = portrait_index - 3 (適用於 P03+)
-# 以下為 P00, P01, P02 的特殊情況
-MANUAL_PORTRAIT_MAPPING = {
-    0: 2,    # 劉備 (P00 無法用 p-3 公式)
-    # 1: 使用 PORTRAIT_01_LAYOUT (自訂排列，不在此表)
-    2: 12,   # 關羽 (P02 無法用 p-3 公式，實際對應 A12)
-}
+# 頭像→排列映射: 1:1 對應 (arrangement_index = portrait_index)
+# 排列表從 0x1B0D4 開始，正好 81 個條目，與頭像數量相同
 
 
 def load_rom(path):
@@ -120,22 +104,16 @@ def load_all_arrangements(rom):
 
 
 def find_arrangement_for_portrait(portrait, arrangements):
-    """為頭像找到合適的排列"""
-    tile_count = portrait['tile_count']
+    """為頭像找到合適的排列 (1:1 對應)"""
+    p_idx = portrait['index']
 
     # 36-tile 頭像使用標準排列
-    if tile_count == 36:
+    if portrait['is_standard']:
         return STANDARD_LAYOUT
 
-    # 找 max_tile == tile_count 的排列 (最佳匹配)
-    for arr in arrangements:
-        if arr['max_tile'] == tile_count and not arr['is_standard']:
-            return arr['layout']
-
-    # 找 max_tile < tile_count 的排列 (可接受)
-    for arr in arrangements:
-        if arr['max_tile'] < tile_count and not arr['is_standard']:
-            return arr['layout']
+    # 1:1 映射：arrangement_index = portrait_index
+    if p_idx < len(arrangements):
+        return arrangements[p_idx]['layout']
 
     # 找不到，使用標準排列
     return STANDARD_LAYOUT
@@ -193,33 +171,23 @@ def generate_portrait(rom, portrait, layout):
 def build_portrait_arrangement_mapping(portraits, arrangements):
     """建立頭像到排列的映射
 
-    規則發現: arrangement_index = portrait_index - 3 (適用於 P03 以上)
-    P00, P01, P02 需要特殊處理
+    規則: arrangement_index = portrait_index (1:1 對應)
+    排列表從 0x1B0D4 開始，正好 81 個條目
     """
     mapping = {}
 
-    # 建立排列索引到 layout 的查找表
-    arr_by_index = {arr['index']: arr for arr in arrangements}
-
-    # 處理所有非標準頭像
-    non_standard_portraits = [p for p in portraits if not p['is_standard']]
-
-    for p in non_standard_portraits:
+    for p in portraits:
         p_idx = p['index']
 
-        # 特殊情況: P00, P01, P02 使用手動映射
-        if p_idx in MANUAL_PORTRAIT_MAPPING:
-            arr_idx = MANUAL_PORTRAIT_MAPPING[p_idx]
-            if arr_idx in arr_by_index:
-                mapping[p_idx] = arr_by_index[arr_idx]['layout']
+        # 36-tile 標準頭像使用標準排列
+        if p['is_standard']:
+            mapping[p_idx] = STANDARD_LAYOUT
             continue
 
-        # 通用規則: arrangement = portrait - 3
-        arr_idx = p_idx - 3
-        if arr_idx >= 0 and arr_idx in arr_by_index:
-            mapping[p_idx] = arr_by_index[arr_idx]['layout']
+        # 1:1 映射
+        if p_idx < len(arrangements):
+            mapping[p_idx] = arrangements[p_idx]['layout']
         else:
-            # 找不到，使用標準排列
             mapping[p_idx] = STANDARD_LAYOUT
 
     return mapping
@@ -239,13 +207,7 @@ def export_all_portraits(rom, output_dir, scale=2):
     print()
 
     for p in portraits:
-        if p['index'] == 1:
-            layout = PORTRAIT_01_LAYOUT  # P01 使用自訂排列
-        elif p['is_standard']:
-            layout = STANDARD_LAYOUT
-        else:
-            layout = mapping.get(p['index'], STANDARD_LAYOUT)
-
+        layout = mapping.get(p['index'], STANDARD_LAYOUT)
         img = generate_portrait(rom, p, layout)
 
         if scale > 1:
@@ -274,13 +236,7 @@ def export_portrait_atlas(rom, output_path, scale=2):
     atlas = Image.new('RGB', (img_width, img_height), (128, 128, 128))
 
     for i, p in enumerate(portraits):
-        if p['index'] == 1:
-            layout = PORTRAIT_01_LAYOUT  # P01 使用自訂排列
-        elif p['is_standard']:
-            layout = STANDARD_LAYOUT
-        else:
-            layout = mapping.get(p['index'], STANDARD_LAYOUT)
-
+        layout = mapping.get(p['index'], STANDARD_LAYOUT)
         portrait_img = generate_portrait(rom, p, layout)
         if scale > 1:
             portrait_img = portrait_img.resize((size, size), Image.NEAREST)

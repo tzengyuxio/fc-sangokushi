@@ -125,11 +125,12 @@ Offset  Size  欄位             說明
 +0      8     Name             假名 (半角片假名, Shift-JIS 0xA6–0xDF)
                                以 0x00 結尾，不足 8 bytes 則填充 0x00
 +8      1     Kanji1 TileID    第一個漢字的 tile ID ✓已驗證
-+9      1     Unknown1         用途未知
++9      1     Kanji1 Page      漢字 Page 指示器 (0=Page0, 1=Page1)
 +10     1     Kanji2 TileID    第二個漢字的 tile ID ✓已驗證
-+11     1     Unknown2         用途未知
++11     1     Kanji2 Page      漢字 Page 指示器
 +12     1     Kanji3 TileID    第三個漢字的 tile ID ✓已驗證 (複姓用)
-+13-14  2     Unknown3         用途未知 (可能是顯示相關)
++13     1     Kanji3 Page      漢字 Page 指示器
++14     1     Portrait         頭像索引 byte (portrait = byte - 1) ✓已驗證
 ```
 
 **漢字 tile ID 說明:**
@@ -255,17 +256,17 @@ ID   漢字    ID   漢字    ID   漢字    ID   漢字    ID   漢字
 
 ---
 
-## 頭像系統 (部分完成)
+## 頭像系統 (已完成)
 
 ### 概要
 - 總共 **81** 個主要頭像 (獨立 tile 資料)
 - 每個頭像 = 6×6 tiles = 48×48 pixels
 - Tile 資料存放於 PRG ROM Banks 4-6
-- 255 個武將共用這些頭像 (多人共用同一頭像)
+- 256 個武將共用這些頭像 (多人共用同一頭像)
 
 ### 頭像指標表
 
-**位置**: `0x1BC38` (81 entries × 4 bytes)
+**位置**: `0x1BC38` (81 entries × 4 bytes = 324 bytes)
 
 每筆記錄結構:
 ```
@@ -277,13 +278,23 @@ Offset  Size  欄位
 
 檔案偏移計算: `file_offset = bank × 0x4000 + (addr - 0x8000) + 0x10`
 
+### 武將→頭像映射 (已解決)
+
+**位置**: 姓名表每筆記錄的 byte 14
+
+```
+portrait_index = name_record[+14] - 1
+```
+
+範圍: 0-80 (共 81 個頭像)
+
 ### Tile 排列系統
 
 頭像分為兩類:
 
-**1. 36-tile 頭像 (32 個)**
+**1. 36-tile 標準頭像 (32 個)**
 - 索引: 6, 7, 8, 24, 25, 26, 29, 35, 38, 40, 41, 43, 44, 45, 46, 47, 49, 51, 58, 59, 61, 66, 68, 69, 70, 72, 74, 75, 76, 77, 79, 80
-- 使用標準 2×2 metatile 排列:
+- 使用標準 2×2 metatile 排列 (STANDARD_LAYOUT):
 ```
 [ 1  2][ 5  6][ 9 10]
 [ 3  4][ 7  8][11 12]
@@ -299,20 +310,29 @@ Offset  Size  欄位
 
 ### 排列表
 
-**位置**: `0x1B140` (按頭像索引存取)
+**位置**: `0x1B0D4` (81 entries × 36 bytes = 2,916 bytes)
 
 每筆排列是 36 bytes，對應 6×6 的 tile 位置。
 - 值為 PPU tile index (0x64-0x87)
 - 轉換為 ROM tile 編號: `rom_tile = ppu_value - 0x63`
-- 值 0x64 (ROM tile 1) 通常代表空白/重複區域
 
-**注意**: 排列表直接以頭像索引存取 (arrangement_offset = 0x1B140 + portrait_idx × 36)。
-部分排列資料無效 (max_tile > tile_count)，此時回退使用標準排列。
+### 頭像→排列映射 (已解決)
 
-### 未解決問題
-- 部分頭像的排列資料仍不正確 (約 30-40% 可能有問題)
-- 武將→頭像的映射表尚未找到
-- 可能存在「共用元件」頭像系統 (tiles 分散存放，用於更多武將)
+**公式**: `arrangement_index = portrait_index` (1:1 對應)
+
+排列表正好 81 個條目，與頭像數量完全相同。
+36-tile 標準頭像使用 STANDARD_LAYOUT，其他頭像直接用索引查找排列表。
+
+### 驗證範例
+
+| 武將 | 頭像索引 | 排列索引 |
+|------|----------|----------|
+| 劉備 | 0 | 0 |
+| 諸葛亮 | 1 | 1 |
+| 關羽 | 2 | 2 |
+| 曹操 | 4 | 4 |
+| 孫堅 | 20 | 20 |
+| 袁紹 | 44 | STD |
 
 ### NES Tile 格式
 - 每個 tile: 8×8 pixels, 16 bytes
@@ -338,16 +358,18 @@ Index 3: (255, 255, 255)   白色
 
 | 檔案 | 說明 |
 |------|------|
-| `sangokushi_extract_v2.py` | 武將資料解析主程式 |
+| `sangokushi_extract_v2.py` | 武將資料解析主程式 (含頭像/排列索引) |
 | `kanji_export.py` | 漢字字型匯出工具 |
-| `portrait_export.py` | 頭像匯出工具 |
-| `Sangokushi (Japan)_characters_v2.csv` | 匯出的 CSV |
+| `portrait_export.py` | 頭像匯出工具 (48×48 PNG) |
+| `Sangokushi (Japan)_characters_v2.csv` | 匯出的 CSV (256 筆武將) |
 | `Sangokushi (Japan)_characters_v2.xlsx` | 匯出的 Excel (含格式, 需 openpyxl) |
 | `光榮三國志系列武將登場統計 - 能力表.csv` | 外部參考資料, 用於比對武將姓名 |
 | `CLAUDE.md` | Claude Code 專案指示 |
 | `MEMORY.md` | 本檔案 — 研究記錄 |
-| `docs/DATA_FORMAT.md` | 資料格式詳細文件 |
+| `docs/DATA_FORMAT.md` | 武將資料表格式 (含頭像映射) |
+| `docs/ROM_STRUCTURE.md` | ROM 檔案結構 (含頭像系統) |
 | `docs/KANJI_TILES_ANALYSIS.md` | 漢字 tile 映射分析 |
+| `docs/KANJI_DIFF.md` | ROM 漢字與外部姓名差異對照 |
 
 ---
 
@@ -359,5 +381,9 @@ Index 3: (255, 255, 255)   白色
 4. **未確認欄位**: 透過遊戲測試確認 B1 (Body) 和 B5 (Luck) 的實際用途
 5. ~~**完善角色對照**: 補齊更多角色的序號-姓名-假名對應~~ ✓ 已透過外部 CSV 完成 255/256 筆
 6. **舞台配置資料**: 若需確認不同舞台的武將配置，可用模擬器調試功能追蹤遊戲選擇舞台時的記憶體變化
-7. ~~**姓名表未知欄位**: 解析姓名記錄中 +8 到 +14 的 7 bytes 用途~~ ✓ 已確認 +8/+10/+12 為漢字 tile ID，建立 238 字對照表
-8. **頭像與武將對應**: 找出頭像索引 (0-59) 與武將索引 (0-255) 的對應關係
+7. ~~**姓名表未知欄位**: 解析姓名記錄中 +8 到 +14 的 7 bytes 用途~~ ✓ 已確認完整結構:
+   - +8/+10/+12: 漢字 tile ID (建立 238 字對照表)
+   - +9/+11/+13: 漢字 Page 指示器
+   - +14: 頭像索引 byte
+8. ~~**頭像與武將對應**: 找出頭像索引 (0-80) 與武將索引 (0-255) 的對應關係~~ ✓ 已解決 (姓名表 byte 14)
+9. ~~**頭像→排列映射**: 建立頭像索引到排列索引的映射~~ ✓ 已解決 (1:1 對應，排列表起始 0x1B0D4)

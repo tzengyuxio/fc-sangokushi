@@ -23,8 +23,10 @@ python3 sangokushi_extract_v2.py path/to/rom.nes
 | 檔案 | 用途 |
 |------|------|
 | `sangokushi_extract_v2.py` | 主程式: 解析 ROM 並匯出武將資料 |
+| `portrait_export.py` | 頭像匯出工具 (48×48 PNG) |
 | `docs/DATA_FORMAT.md` | 武將資料表格式技術規格 |
-| `MEMORY.md` | 逆向工程研究筆記 (ROM 結構、頭像系統分析) |
+| `docs/ROM_STRUCTURE.md` | ROM 檔案結構 (含頭像系統) |
+| `MEMORY.md` | 逆向工程研究筆記 |
 
 ## ROM 結構
 
@@ -42,6 +44,11 @@ python3 sangokushi_extract_v2.py path/to/rom.nes
 
 ## 目前進度
 
-- ✓ 武將資料表完整解析 (256 筆記錄, 12 欄位)
+- ✓ 武將資料表完整解析 (256 筆記錄, 含頭像/排列索引)
 - ✓ CSV/XLSX 匯出工具
-- ⏳ 頭像系統 (已知 6×6 tiles, 待完成圖像匯出)
+- ✓ 頭像系統完整解析
+  - 頭像指標表: 0x1BC38 (81 筆 × 4 bytes)
+  - 排列表: 0x1B0D4 (81 筆 × 36 bytes)
+  - 武將→頭像映射: 姓名表 byte 14
+  - 頭像→排列映射: 1:1 對應 (`arrangement = portrait`)
+- ✓ 頭像匯出工具 (portrait_export.py)

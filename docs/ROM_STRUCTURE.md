@@ -86,8 +86,60 @@ PRG ROM 偏移計算: `file_offset = bank × 0x4000 + 0x10`
 
 **姓名記錄結構 (15 bytes):**
 ```
-+0-7   Name      假名 (半角片假名, Shift-JIS 0xA6-0xDF)
-+8-14  Unknown   用途未知 (可能是漢字指標或顯示資料)
++0-7   Kana        假名 (半角片假名, Shift-JIS 0xA6-0xDF)
++8     Kanji1_ID   第一個漢字 tile ID
++9     Kanji1_Page Page 指示器 (0=Page0, 1=Page1)
++10    Kanji2_ID   第二個漢字 tile ID
++11    Kanji2_Page Page 指示器
++12    Kanji3_ID   第三個漢字 tile ID
++13    Kanji3_Page Page 指示器
++14    Portrait    頭像索引 byte (portrait_index = byte - 1)
+```
+
+**頭像索引計算:**
+```
+portrait_index = name_record[+14] - 1
+```
+範圍: 0-80 (共 81 個頭像)
+
+### Bank 6-7: 頭像系統
+
+| 偏移 | 大小 | 內容 |
+|------|------|------|
+| 0x1B0D4 - 0x1BC37 | 2,916 | 排列表 (81 筆 × 36 bytes) |
+| 0x1BC38 - 0x1BD7B | 324 | 頭像指標表 (81 筆 × 4 bytes) |
+
+**頭像指標表結構 (每筆 4 bytes):**
+```
++0   Bank        PRG Bank 編號
++1   TileCount   Tile 數量 (32 或 36)
++2   AddrLo      CPU 地址低位
++3   AddrHi      CPU 地址高位
+```
+
+**檔案偏移計算:**
+```
+file_offset = bank × 0x4000 + (addr - 0x8000) + 0x10
+```
+
+**排列表結構 (每筆 36 bytes):**
+- 6×6 格 tile 排列資訊
+- 值範圍: 1-36 (tile 編號) 或 0/$64-$87 (特殊)
+- ROM 原始值需轉換: `tile_num = raw_byte - 0x63` (若 `0x64 <= raw_byte <= 0x87`)
+
+**頭像→排列映射規則:**
+```
+arrangement_index = portrait_index  (1:1 對應)
+
+- 排列表正好 81 個條目，與頭像數量相同
+- 36-tile 標準頭像 (32 個): 使用標準排列 STANDARD_LAYOUT
+- 其他頭像: 直接用頭像索引查找排列表
+```
+
+**36-tile 標準頭像索引:**
+```
+6, 7, 8, 24, 25, 26, 29, 35, 38, 40, 41, 43, 44, 45, 46, 47,
+49, 51, 58, 59, 61, 66, 68, 69, 70, 72, 74, 75, 76, 77, 79, 80
 ```
 
 ### Bank 8: 假名字體
@@ -109,7 +161,6 @@ PRG ROM 偏移計算: `file_offset = bank × 0x4000 + 0x10`
 |------|----------|------|
 | 0x39114 - 0x3A30F | 城市資料? | 在武將表與姓名表之間 |
 | 0x0ADA8 附近 | 遊戲文字 | 有大量半角片假名 |
-| Banks 3-8 | 頭像 tile | 分散存放，需要拼接表 |
 
 ---
 
@@ -132,3 +183,4 @@ PRG ROM 偏移計算: `file_offset = bank × 0x4000 + 0x10`
 ## 版本歷史
 
 - 2024: 初始分析，解析武將資料表與姓名表
+- 2025-02: 完成頭像系統分析 (指標表、排列表、映射規則)

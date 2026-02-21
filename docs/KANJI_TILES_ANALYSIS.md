@@ -49,8 +49,13 @@ ROM 中只儲存 Plane 0 (8 bytes/tile)。遊戲載入時將 Plane 0 複製到 P
 +11:    Page 指示器
 +12:    第三個漢字 tile ID
 +13:    Page 指示器
-+14:    排序索引
++14:    頭像索引 byte (portrait_index = byte - 1)
 ```
+
+### 頭像索引說明
+- Byte 14 儲存頭像索引 +1 的值
+- 實際頭像索引 = byte_14 - 1
+- 範圍: 0-80 (共 81 個頭像)
 
 ### Tile ID 分布
 

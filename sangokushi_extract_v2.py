@@ -107,6 +107,16 @@ NAME_TABLE_ADDR   = 0x3A314
 NAME_RECORD_SIZE  = 15
 NAME_DATA_SIZE    = 8  # 名字最多 8 bytes
 
+# 頭像相關常數
+PORTRAIT_COUNT = 81
+
+# 36-tile 標準頭像索引 (使用標準排列)
+STANDARD_36_PORTRAITS = {6, 7, 8, 24, 25, 26, 29, 35, 38, 40, 41, 43, 44, 45, 46, 47, 49, 51, 58, 59,
+                         61, 66, 68, 69, 70, 72, 74, 75, 76, 77, 79, 80}
+
+# 頭像→排列映射: 1:1 對應 (arrangement_index = portrait_index)
+# 排列表從 0x1B0D4 開始，正好 81 個條目
+
 # 漢字 tile ID 對照表 (從 ROM 姓名表 +8, +10, +12 位置解析)
 KANJI_TILE_MAP = {
     0x01: "翊", 0x02: "苞", 0x03: "允", 0x04: "紘", 0x05: "羽", 0x06: "熙", 0x07: "叡",
@@ -288,13 +298,23 @@ def decode_kanji_tiles(data):
 
 def load_rom_names(rom_data):
     """
-    從 ROM 載入武將姓名表 (假名與漢字)
+    從 ROM 載入武將姓名表 (假名、漢字、頭像索引)
 
     參數:
         rom_data: bytes, ROM 資料
 
     回傳:
-        list of tuples: [(kana, kanji), ...] 共 257 筆 (索引 0 為新君主模板)
+        list of tuples: [(kana, kanji, portrait_byte), ...] 共 257 筆 (索引 0 為新君主模板)
+
+    姓名表結構 (每筆 15 bytes):
+        +0-7:  假名 (8 bytes)
+        +8:    漢字1 tile ID
+        +9:    漢字1 Page
+        +10:   漢字2 tile ID
+        +11:   漢字2 Page
+        +12:   漢字3 tile ID
+        +13:   漢字3 Page
+        +14:   頭像索引 byte (portrait_index = byte - 1)
     """
     names = []
     for i in range(257):  # 256 武將 + 1 新君主模板
@@ -307,8 +327,44 @@ def load_rom_names(rom_data):
         # 漢字 tile IDs (後 7 bytes: +8 到 +14)
         kanji_bytes = rom_data[offset + NAME_DATA_SIZE:offset + NAME_RECORD_SIZE]
         kanji = decode_kanji_tiles(kanji_bytes)
-        names.append((kana, kanji))
+        # 頭像索引 byte (+14)
+        portrait_byte = rom_data[offset + 14]
+        names.append((kana, kanji, portrait_byte))
     return names
+
+
+def get_portrait_index(portrait_byte):
+    """
+    從姓名表 byte 14 計算頭像索引
+
+    參數:
+        portrait_byte: 姓名表 +14 位置的原始 byte
+
+    回傳:
+        int: 頭像索引 (0-80)
+    """
+    return portrait_byte - 1
+
+
+def get_arrangement_index(portrait_index):
+    """
+    根據頭像索引計算排列索引
+
+    規則: arrangement_index = portrait_index (1:1 對應)
+    排列表從 0x1B0D4 開始，正好 81 個條目
+
+    參數:
+        portrait_index: 頭像索引 (0-80)
+
+    回傳:
+        int 或 str: 排列索引，36-tile 標準頭像回傳 "STD"
+    """
+    # 36-tile 標準頭像使用標準排列
+    if portrait_index in STANDARD_36_PORTRAITS:
+        return "STD"
+
+    # 1:1 映射
+    return portrait_index
 
 # ─── CSV 欄位 ────────────────────────────────────────────
 CSV_FIELDS = [
@@ -318,6 +374,8 @@ CSV_FIELDS = [
     "ROM_Kanji",          # 漢字 (ROM 解析, tile ID 對照)
     "[EXT]Name",          # 姓名 (外部提供)
     "[EXT]Kana",          # 假名 (外部提供)
+    "Portrait",           # 頭像索引 (0-80)
+    "Arrangement",        # 排列索引 (0-77, STD, 或 CUSTOM)
     "Age",                # B0 - 年齡 (signed)
     "Body",               # B1 - 體力
     "Intelligence",       # B2 - 智力
@@ -394,13 +452,18 @@ def extract_all(rom_path, ext_csv_path=None):
         rec["index"] = idx
         rec["offset"] = offset
 
-        # ROM 假名與漢字 (名字表索引與武將索引相同)
+        # ROM 假名、漢字、頭像索引 (名字表索引與武將索引相同)
         if idx < len(rom_names):
             rec["rom_kana"] = rom_names[idx][0]
             rec["rom_kanji"] = rom_names[idx][1]
+            portrait_byte = rom_names[idx][2]
+            rec["portrait"] = get_portrait_index(portrait_byte)
+            rec["arrangement"] = get_arrangement_index(rec["portrait"])
         else:
             rec["rom_kana"] = ""
             rec["rom_kanji"] = ""
+            rec["portrait"] = 0
+            rec["arrangement"] = "STD"
 
         # 先嘗試從外部 CSV 比對能力值
         stats_key = (rec["body"], rec["intelligence"], rec["military"],
@@ -430,6 +493,8 @@ def export_csv(records, output_path):
                 "ROM_Kanji":    r["rom_kanji"],
                 "[EXT]Name":    r["ext_name"],
                 "[EXT]Kana":    r["ext_kana"],
+                "Portrait":     r["portrait"],
+                "Arrangement":  r["arrangement"],
                 "Age":          r["age"],
                 "Body":         r["body"],
                 "Intelligence": r["intelligence"],
@@ -459,6 +524,7 @@ def export_xlsx(records, output_path):
     headers = [
         ("序號", 5),  ("偏移", 9),   ("ROM假名", 12),  ("ROM漢字", 10),
         ("[EXT]姓名", 10), ("[EXT]假名", 14),
+        ("頭像", 5), ("排列", 7),
         ("年齡", 5),  ("體力", 5),   ("智力", 5),       ("武力", 5),
         ("魅力", 5),  ("運氣", 5),   ("忠誠", 5),       ("B7", 4),
         ("水軍", 5),  ("身份", 10),  ("兵士", 8),       ("城市", 5),
@@ -507,6 +573,8 @@ def export_xlsx(records, output_path):
             r["rom_kanji"],
             r["ext_name"],
             r["ext_kana"],
+            r["portrait"],
+            r["arrangement"],
             r["age"],
             r["body"],
             r["intelligence"],
@@ -526,15 +594,16 @@ def export_xlsx(records, output_path):
         for col, val in enumerate(values, 1):
             cell = ws.cell(row=row, column=col, value=val)
             cell.border = thin_border
-            cell.alignment = center if col not in (3, 4, 5, 6, 20) else Alignment(horizontal="left")
+            # 左對齊: ROM假名(3), ROM漢字(4), [EXT]姓名(5), [EXT]假名(6), Raw Hex(22)
+            cell.alignment = center if col not in (3, 4, 5, 6, 22) else Alignment(horizontal="left")
             # 字型
-            if col == 20:  # Raw Hex
+            if col == 22:  # Raw Hex
                 cell.font = mono_font
             elif col in (3, 4):  # ROM假名, ROM漢字
                 cell.font = data_font
             elif col in (5, 6):  # [EXT]姓名, [EXT]假名
                 cell.font = ext_font
-            elif col == 7 and isinstance(val, int) and val < 0:  # 年齡 (負值)
+            elif col == 9 and isinstance(val, int) and val < 0:  # 年齡 (負值, 現在是第9欄)
                 cell.font = neg_font
             else:
                 cell.font = data_font
