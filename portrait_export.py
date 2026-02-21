@@ -21,6 +21,11 @@ except ImportError:
 PORTRAIT_PTR_TABLE = 0x1BC38
 PORTRAIT_COUNT = 81
 
+# 武將→頭像映射表
+CHARACTER_PORTRAIT_TABLE = 0x3B214
+CHARACTER_COUNT = 256
+# 實際只有 P00-P37 被武將使用，P38-P80 可能是共用元件或未使用
+
 # 排列表
 ARRANGEMENT_TABLE = 0x1B140
 ARRANGEMENT_COUNT = 78  # 排列表中的條目數 (原認為 60，實際延伸到頭像指標表)
