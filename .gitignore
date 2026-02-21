@@ -1,0 +1,10 @@
+# ROM files (勿上傳)
+*.nes
+
+# Output files
+*.xlsx
+*.csv
+
+# Python
+__pycache__/
+*.pyc
