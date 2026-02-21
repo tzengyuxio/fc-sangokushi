@@ -8,3 +8,6 @@
 # Python
 __pycache__/
 *.pyc
+
+# Test output images
+kanji_*.png
