@@ -23,7 +23,7 @@ PORTRAIT_COUNT = 81
 
 # 排列表
 ARRANGEMENT_TABLE = 0x1B140
-ARRANGEMENT_COUNT = 60  # 排列表中的條目數
+ARRANGEMENT_COUNT = 78  # 排列表中的條目數 (原認為 60，實際延伸到頭像指標表)
 
 # 色盤 (從遊戲截圖校準)
 PALETTE = [
@@ -46,6 +46,49 @@ STANDARD_LAYOUT = [
 # 36-tile 頭像索引 (32 個)
 STANDARD_36_PORTRAITS = {6, 7, 8, 24, 25, 26, 29, 35, 38, 40, 41, 43, 44, 45, 46, 47, 49, 51, 58, 59,
                          61, 66, 68, 69, 70, 72, 74, 75, 76, 77, 79, 80}
+
+# P01 的自訂排列 (不在排列表中，手動校正)
+PORTRAIT_01_LAYOUT = [
+    [ 1,  2,  5,  6,  9, 10],
+    [ 3,  4,  7,  8, 11, 12],
+    [10, 13, 15, 16, 19, 20],
+    [10, 14, 17, 18, 21, 22],
+    [10, 23, 26, 27, 30, 10],
+    [24, 25, 28, 29, 31, 32],
+]
+
+# 手動校正的頭像→排列索引映射 (通過視覺比對確認)
+# 格式: portrait_index: arrangement_index
+MANUAL_PORTRAIT_MAPPING = {
+    # tile_count=32 組
+    # 1: 使用 PORTRAIT_01_LAYOUT (自訂排列)
+    20: 2,   # A2, A17, A18, A27 都可以
+    21: 17,  # A2, A17, A18, A27 都可以
+    30: 18,  # A2, A17, A18, A27 都可以
+    31: 28,
+    33: 30,
+    36: 33,
+    54: 51,
+    # tile_count=33 組
+    2: 12,
+    11: 8,
+    15: 12,
+    16: 13,
+    17: 14,
+    18: 14,  # A14, A15 都可以，選 A14
+    34: 31,
+    39: 36,
+    48: 45,
+    56: 31,
+    64: 31,
+    # tile_count=35 組
+    63: 60,
+    65: 62,  # A62, A68 都可以，選 A62
+    67: 57,  # A57, A64 都可以，選 A57
+    71: 62,  # A62, A68 都可以，選 A62
+    73: 70,
+    78: 75,
+}
 
 
 def load_rom(path):
@@ -165,12 +208,21 @@ def generate_portrait(rom, portrait, layout):
 
 
 def build_portrait_arrangement_mapping(portraits, arrangements):
-    """建立頭像到排列的映射（貪婪匹配）"""
+    """建立頭像到排列的映射（優先使用手動映射，其餘貪婪匹配）"""
     mapping = {}
     used_arrangements = set()
 
-    # 先處理非標準頭像
-    non_standard_portraits = [p for p in portraits if not p['is_standard']]
+    # 建立排列索引到 layout 的查找表
+    arr_by_index = {arr['index']: arr for arr in arrangements}
+
+    # 先處理手動映射
+    for portrait_idx, arr_idx in MANUAL_PORTRAIT_MAPPING.items():
+        if arr_idx in arr_by_index:
+            mapping[portrait_idx] = arr_by_index[arr_idx]['layout']
+            used_arrangements.add(arr_idx)
+
+    # 處理剩餘的非標準頭像
+    non_standard_portraits = [p for p in portraits if not p['is_standard'] and p['index'] not in mapping]
 
     # 按 tile_count 排序，優先處理 tile 數較少的（更容易找到唯一匹配）
     non_standard_portraits.sort(key=lambda p: p['tile_count'])
@@ -218,7 +270,9 @@ def export_all_portraits(rom, output_dir, scale=2):
     print()
 
     for p in portraits:
-        if p['is_standard']:
+        if p['index'] == 1:
+            layout = PORTRAIT_01_LAYOUT  # P01 使用自訂排列
+        elif p['is_standard']:
             layout = STANDARD_LAYOUT
         else:
             layout = mapping.get(p['index'], STANDARD_LAYOUT)
@@ -251,7 +305,9 @@ def export_portrait_atlas(rom, output_path, scale=2):
     atlas = Image.new('RGB', (img_width, img_height), (128, 128, 128))
 
     for i, p in enumerate(portraits):
-        if p['is_standard']:
+        if p['index'] == 1:
+            layout = PORTRAIT_01_LAYOUT  # P01 使用自訂排列
+        elif p['is_standard']:
             layout = STANDARD_LAYOUT
         else:
             layout = mapping.get(p['index'], STANDARD_LAYOUT)
