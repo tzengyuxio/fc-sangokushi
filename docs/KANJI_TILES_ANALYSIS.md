@@ -111,12 +111,65 @@ ROM 中只儲存 Plane 0 (8 bytes/tile)。遊戲載入時將 Plane 0 複製到 P
 3. 再往上追蹤到 PRG ROM 讀取位置
 4. 最終在 Memory Viewer 搜尋 tile 資料，找到 PRG ROM $211C4
 
+## 漢字查詢方法
+
+### 從 ROM 武將資料查詢漢字
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  ROM 武將資料 (0x3A314 + index × 15)                         │
+├─────────────────────────────────────────────────────────────┤
+│  Bytes 0-7: 假名                                             │
+│  Byte 8:  漢字1 Tile ID  ←─┐                                │
+│  Byte 9:  漢字1 Page       │                                │
+│  Byte 10: 漢字2 Tile ID    │  查表用的 key                   │
+│  Byte 11: 漢字2 Page       │                                │
+│  Byte 12: 漢字3 Tile ID  ←─┘                                │
+│  Byte 13: 漢字3 Page                                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Tile ID 拆解
+
+Tile ID 的高 4 位為行，低 4 位為列：
+
+```
+Tile ID = 0xRC  →  第 R 行, 第 C 列
+
+例: 0x8E = 第 8 行, 第 E 列 → 「曹」
+```
+
+### 查表步驟
+
+1. 從 ROM 讀取 Tile ID 和 Page
+2. 根據 Page 選擇對應的漢字表圖片
+3. 用 Tile ID 的高 4 位找行 (左側標籤)
+4. 用 Tile ID 的低 4 位找列 (上方標籤)
+5. 行列交叉處即為對應漢字
+
+### 範例: 曹操
+
+```
+ROM 資料: 8E 00 8D 00 00 00
+         │  │  │  │
+         │  │  │  └─ 漢字2 Page = 0
+         │  │  └──── 漢字2 Tile ID = 0x8D
+         │  └─────── 漢字1 Page = 0
+         └────────── 漢字1 Tile ID = 0x8E
+
+漢字1: 0x8E, Page 0 → 第 8 行第 E 列 → 「曹」
+漢字2: 0x8D, Page 0 → 第 8 行第 D 列 → 「操」
+```
+
+---
+
 ## 相關檔案
 
 | 檔案 | 說明 |
 |------|------|
 | `kanji_export.py` | 漢字圖形匯出工具 |
-| `kanji_output/kanji_atlas_page0.png` | Page 0 完整字型表 (256 字) |
+| `kanji_output/kanji_atlas_page0_labeled.png` | Page 0 字型表 (含座標標籤) |
+| `kanji_output/kanji_atlas_page1_labeled.png` | Page 1 字型表 (含座標標籤) |
 | `kanji_output/individual/kanji_p0_*.png` | Page 0 個別漢字 (241 個) |
 | `kanji_output/individual/kanji_p1_*.png` | Page 1 個別漢字 (66 個) |
 
