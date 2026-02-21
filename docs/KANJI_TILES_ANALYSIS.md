@@ -5,22 +5,26 @@
 透過 Mesen debugger 追蹤，確認了漢字 tile 的儲存位置：
 
 ```
-PRG_ROM_offset = 0x205E4 + (tile_id + 0x30) × 16
+PRG_ROM_offset = 0x20004 + tile_id × 32
 File_offset = PRG_ROM_offset + 0x10 (iNES header)
 ```
 
-- **基址 (PRG ROM)**: `0x205E4`
-- **基址 (檔案)**: `0x205F4`
-- **PPU 偏移量**: `0x30` (tile_id + 0x30 = PPU tile index)
-- **每個 tile**: 16 bytes (8×8 pixels)
-- **每個漢字**: 64 bytes (4 tiles, 16×16 pixels)
+- **基址 (PRG ROM)**: `0x20004`
+- **基址 (檔案)**: `0x20014`
+- **每個 tile**: 8 bytes (只有 Plane 0)
+- **每個漢字**: 32 bytes (4 tiles × 8 bytes)
+- **Tile 排列**: `[0][1]` 在 offset+0, offset+8；`[2][3]` 在 offset+16, offset+24
+
+### 特殊處理
+
+ROM 中只儲存 Plane 0 (8 bytes/tile)。遊戲載入時將 Plane 0 複製到 Plane 1，
+因此漢字只有黑白兩色（無灰階）。
 
 ### 驗證範例
 
 「曹」字 (tile_id = 0x8E):
-- PPU tile index = 0x8E + 0x30 = 0xBE
-- PRG ROM offset = 0x205E4 + 0xBE × 16 = 0x211C4 ✓
-- 4 tiles 位於: 0x211C4, 0x211D4, 0x211E4, 0x211F4
+- PRG ROM offset = 0x20004 + 0x8E × 32 = 0x211C4 ✓
+- 4 tiles 位於: 0x211C4, 0x211CC, 0x211D4, 0x211DC (每個間隔 8 bytes)
 
 ---
 
@@ -50,32 +54,34 @@ File_offset = PRG_ROM_offset + 0x10 (iNES header)
 ### 漢字規格
 - 尺寸: 16×16 像素 (遊戲畫面觀察)
 - 組成: 4 個 8×8 NES tiles
-- 每個 tile: 16 bytes (2 bitplanes × 8 rows)
-- 每個漢字: 64 bytes
+- 每個 tile: 8 bytes (只有 Plane 0，遊戲載入時複製到 Plane 1)
+- 每個漢字: 32 bytes
+- 顏色: 黑白兩色 (無灰階)
 
 ### 預估儲存空間
-- Page 0: 241 × 64 = 15,424 bytes
-- Page 1: 66 × 64 = 4,224 bytes
-- 總計: ~19,648 bytes ≈ 19.2 KB
+- Page 0: 241 × 32 = 7,712 bytes
+- Page 1: 66 × 32 = 2,112 bytes
+- 總計: ~9,824 bytes ≈ 9.6 KB
 
-## 候選儲存位置
+## 儲存位置
 
-### Bank 8 (0x20010-0x2400F)
-- 含有假名字體 (0x22CA0)
-- 發現連續的 tile-like 資料區塊
-- **但 tile_id 與 ROM 偏移的映射關係未確認**
+### Page 0 漢字 (已確認)
+- **位置**: Bank 8 (0x20010-0x2400F)
+- **漢字基址**: PRG 0x20004 / File 0x20014
+- **範圍**: tile_id 0x01-0xFF (241 個漢字)
+- **假名字體**: 0x22CA0 (同 Bank)
 
-### 其他圖形 Banks (3-7)
-- Bank 4-7 也包含 tile 圖形資料
-- 可能是頭像或地圖 tiles
+### Page 1 漢字 (待確認)
+- 推測在 Page 0 之後或其他 Bank
+- 需要追蹤 Page 1 漢字的實際載入位置
 
 ## 已解決問題
 
 ### ✓ Tile ID → ROM 偏移映射
 透過 Mesen debugger 追蹤確認：
-- 基址: `0x205E4` (PRG ROM) / `0x205F4` (檔案)
-- 公式: `offset = base + (tile_id + 0x30) × 16`
-- 4 tiles 連續存放
+- 基址: `0x20004` (PRG ROM) / `0x20014` (檔案)
+- 公式: `offset = base + tile_id × 32`
+- 4 tiles 間隔 8 bytes 存放 (offset+0, +8, +16, +24)
 
 ### Page 1 漢字位置 (待確認)
 Page 1 (擴展) 漢字的 tile 圖形位置尚未追蹤確認。
