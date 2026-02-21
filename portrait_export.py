@@ -69,6 +69,7 @@ PORTRAIT_01_LAYOUT = [
 MANUAL_PORTRAIT_MAPPING = {
     # tile_count=32 組
     # 1: 使用 PORTRAIT_01_LAYOUT (自訂排列)
+    5: 27,   # 孫權, A2/A17/A18/A27 都可以
     20: 2,   # A2, A17, A18, A27 都可以
     21: 17,  # A2, A17, A18, A27 都可以
     30: 18,  # A2, A17, A18, A27 都可以
