@@ -5,8 +5,9 @@ FC 三國志 漢字字型匯出工具
 
 根據逆向工程分析結果，從 ROM 匯出 16×16 漢字圖形。
 
-映射公式 (Page 0):
-  PRG_ROM_offset = 0x20004 + tile_id × 32
+映射公式:
+  Page 0: PRG_ROM_offset = 0x20004 + tile_id × 32
+  Page 1: PRG_ROM_offset = 0x22004 + tile_id × 32
   File_offset = PRG_ROM_offset + 0x10 (iNES header)
 
 每個漢字 = 4 個 8×8 tiles = 32 bytes (只有 Plane 0)
@@ -27,9 +28,11 @@ except ImportError:
 
 # 漢字 tile 基址 (PRG ROM)
 # 每個漢字 = 32 bytes (4 tiles × 8 bytes，只有 Plane 0)
-# 公式: PRG_offset = 0x20004 + tile_id × 32
-KANJI_BASE_PRG = 0x20004
-KANJI_BASE_FILE = KANJI_BASE_PRG + 0x10  # 加上 iNES header
+# 公式: PRG_offset = base + tile_id × 32
+KANJI_BASE_PRG_PAGE0 = 0x20004
+KANJI_BASE_PRG_PAGE1 = 0x22004  # Page 1 在 Page 0 後 8KB
+KANJI_BASE_FILE_PAGE0 = KANJI_BASE_PRG_PAGE0 + 0x10  # 加上 iNES header
+KANJI_BASE_FILE_PAGE1 = KANJI_BASE_PRG_PAGE1 + 0x10
 
 # 每個漢字的大小 (bytes)
 KANJI_SIZE = 32  # 4 tiles × 8 bytes
@@ -98,15 +101,16 @@ def decode_kanji_16x16(rom, tile_id, page=0):
         page: 0 或 1
 
     Returns:
-        16×16 像素陣列，若 page 1 則回傳 None
+        16×16 像素陣列
     """
+    # 根據 Page 選擇基址
     if page == 1:
-        # Page 1 的基址尚未確認，需要用 Mesen 追蹤
-        # TODO: 找一個 Page 1 的漢字，追蹤其 ROM 位置
-        return None
+        base = KANJI_BASE_FILE_PAGE1
+    else:
+        base = KANJI_BASE_FILE_PAGE0
 
     # 計算 ROM 偏移: offset = base + tile_id × 32
-    offset = KANJI_BASE_FILE + tile_id * KANJI_SIZE
+    offset = base + tile_id * KANJI_SIZE
 
     # 讀取 4 個 tiles (每個 8 bytes，共 32 bytes)
     # 排列: [0][1] 在 offset+0, offset+8
@@ -231,21 +235,18 @@ def export_individual_kanji(rom, output_dir, scale=4):
 
     for tile_id, page in unique_tiles:
         pixels = decode_kanji_16x16(rom, tile_id, page=page)
-
-        if pixels is None:
-            # Page 1 尚未支援
-            page1_count += 1
-            continue
-
         char_img = pixels_to_image(pixels, scale=scale)
 
         filename = f"kanji_p{page}_{tile_id:02X}.png"
         filepath = os.path.join(output_dir, filename)
         char_img.save(filepath)
-        page0_count += 1
 
-    print(f"已匯出 Page 0: {page0_count} 個")
-    print(f"Page 1 尚未支援: {page1_count} 個 (需追蹤 ROM 位置)")
+        if page == 0:
+            page0_count += 1
+        else:
+            page1_count += 1
+
+    print(f"已匯出 Page 0: {page0_count} 個, Page 1: {page1_count} 個")
     print(f"儲存於: {output_dir}/")
 
 

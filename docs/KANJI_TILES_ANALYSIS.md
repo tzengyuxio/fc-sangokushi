@@ -5,15 +5,20 @@
 透過 Mesen debugger 追蹤，確認了漢字 tile 的儲存位置：
 
 ```
-PRG_ROM_offset = 0x20004 + tile_id × 32
+Page 0: PRG_ROM_offset = 0x20004 + tile_id × 32
+Page 1: PRG_ROM_offset = 0x22004 + tile_id × 32
 File_offset = PRG_ROM_offset + 0x10 (iNES header)
 ```
 
-- **基址 (PRG ROM)**: `0x20004`
-- **基址 (檔案)**: `0x20014`
+| Page | 基址 (PRG) | 基址 (File) | 說明 |
+|------|------------|-------------|------|
+| Page 0 | 0x20004 | 0x20014 | 基本漢字 (241 個) |
+| Page 1 | 0x22004 | 0x22014 | 擴展漢字 (66 個) |
+
 - **每個 tile**: 8 bytes (只有 Plane 0)
 - **每個漢字**: 32 bytes (4 tiles × 8 bytes)
 - **Tile 排列**: `[0][1]` 在 offset+0, offset+8；`[2][3]` 在 offset+16, offset+24
+- **Page 間距**: 0x2000 (8 KB)
 
 ### 特殊處理
 
@@ -22,9 +27,13 @@ ROM 中只儲存 Plane 0 (8 bytes/tile)。遊戲載入時將 Plane 0 複製到 P
 
 ### 驗證範例
 
-「曹」字 (tile_id = 0x8E):
+「曹」字 (Page 0, tile_id = 0x8E):
 - PRG ROM offset = 0x20004 + 0x8E × 32 = 0x211C4 ✓
 - 4 tiles 位於: 0x211C4, 0x211CC, 0x211D4, 0x211DC (每個間隔 8 bytes)
+
+「蔡」字 (Page 1, tile_id = 0x08):
+- PRG ROM offset = 0x22004 + 0x08 × 32 = 0x22104 ✓
+- 4 tiles 位於: 0x22104, 0x2210C, 0x22114, 0x2211C (每個間隔 8 bytes)
 
 ---
 
@@ -65,27 +74,33 @@ ROM 中只儲存 Plane 0 (8 bytes/tile)。遊戲載入時將 Plane 0 複製到 P
 
 ## 儲存位置
 
+所有漢字都在 **Bank 8** (PRG 0x20000-0x23FFF / File 0x20010-0x2400F) 內。
+
 ### Page 0 漢字 (已確認)
-- **位置**: Bank 8 (0x20010-0x2400F)
 - **漢字基址**: PRG 0x20004 / File 0x20014
 - **範圍**: tile_id 0x01-0xFF (241 個漢字)
-- **假名字體**: 0x22CA0 (同 Bank)
+- **大小**: 241 × 32 = 7,712 bytes
 
-### Page 1 漢字 (待確認)
-- 推測在 Page 0 之後或其他 Bank
-- 需要追蹤 Page 1 漢字的實際載入位置
+### Page 1 漢字 (已確認)
+- **漢字基址**: PRG 0x22004 / File 0x22014
+- **範圍**: tile_id 0x01-0x42 (66 個漢字)
+- **大小**: 66 × 32 = 2,112 bytes
+
+### 其他資料
+- **假名字體**: PRG 0x22C90 / File 0x22CA0 (同 Bank)
 
 ## 已解決問題
 
-### ✓ Tile ID → ROM 偏移映射
-透過 Mesen debugger 追蹤確認：
+### ✓ Tile ID → ROM 偏移映射 (Page 0)
+透過 Mesen debugger 追蹤「曹」字確認：
 - 基址: `0x20004` (PRG ROM) / `0x20014` (檔案)
 - 公式: `offset = base + tile_id × 32`
 - 4 tiles 間隔 8 bytes 存放 (offset+0, +8, +16, +24)
 
-### Page 1 漢字位置 (待確認)
-Page 1 (擴展) 漢字的 tile 圖形位置尚未追蹤確認。
-推測可能在 Page 0 之後，但需要進一步驗證。
+### ✓ Page 1 漢字位置
+透過 Mesen debugger 追蹤「蔡」字確認：
+- 基址: `0x22004` (PRG ROM) / `0x22014` (檔案)
+- 公式與 Page 0 相同，僅基址不同 (+0x2000)
 
 ## 追蹤方法 (已完成)
 
@@ -102,12 +117,13 @@ Page 1 (擴展) 漢字的 tile 圖形位置尚未追蹤確認。
 |------|------|
 | `kanji_export.py` | 漢字圖形匯出工具 |
 | `kanji_output/kanji_atlas_page0.png` | Page 0 完整字型表 (256 字) |
-| `kanji_output/individual/` | 所有個別漢字圖片 |
+| `kanji_output/individual/kanji_p0_*.png` | Page 0 個別漢字 (241 個) |
+| `kanji_output/individual/kanji_p1_*.png` | Page 1 個別漢字 (66 個) |
 
 ## 後續工作
 
 1. ~~使用模擬器 debug 功能追蹤實際 tile 載入~~ ✓
 2. ~~確認 tile_id → ROM 偏移映射關係~~ ✓
 3. ~~匯出所有漢字圖形~~ ✓
-4. 使用 OCR 或人工對照建立正確的 KANJI_TILE_MAP
-5. 追蹤 Page 1 漢字的 ROM 位置
+4. ~~追蹤 Page 1 漢字的 ROM 位置~~ ✓
+5. 使用 OCR 或人工對照建立正確的 KANJI_TILE_MAP
