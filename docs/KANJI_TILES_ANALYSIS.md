@@ -1,5 +1,29 @@
 # 漢字 Tile 圖形分析
 
+## 映射公式 (已確認)
+
+透過 Mesen debugger 追蹤，確認了漢字 tile 的儲存位置：
+
+```
+PRG_ROM_offset = 0x205E4 + (tile_id + 0x30) × 16
+File_offset = PRG_ROM_offset + 0x10 (iNES header)
+```
+
+- **基址 (PRG ROM)**: `0x205E4`
+- **基址 (檔案)**: `0x205F4`
+- **PPU 偏移量**: `0x30` (tile_id + 0x30 = PPU tile index)
+- **每個 tile**: 16 bytes (8×8 pixels)
+- **每個漢字**: 64 bytes (4 tiles, 16×16 pixels)
+
+### 驗證範例
+
+「曹」字 (tile_id = 0x8E):
+- PPU tile index = 0x8E + 0x30 = 0xBE
+- PRG ROM offset = 0x205E4 + 0xBE × 16 = 0x211C4 ✓
+- 4 tiles 位於: 0x211C4, 0x211D4, 0x211E4, 0x211F4
+
+---
+
 ## 已確認資訊
 
 ### 姓名表結構 (0x3A314)
@@ -45,49 +69,39 @@
 - Bank 4-7 也包含 tile 圖形資料
 - 可能是頭像或地圖 tiles
 
-## 未解決問題
+## 已解決問題
 
-### 1. Tile ID → ROM 偏移映射
-已嘗試但未成功的映射方式：
-- `offset = base + tile_id × 64` (連續 16x16 儲存)
-- `offset = base + tile_id × 16` (單一 8x8 tile)
-- PPU nametable 風格: `[id, id+1, id+16, id+17]`
+### ✓ Tile ID → ROM 偏移映射
+透過 Mesen debugger 追蹤確認：
+- 基址: `0x205E4` (PRG ROM) / `0x205F4` (檔案)
+- 公式: `offset = base + (tile_id + 0x30) × 16`
+- 4 tiles 連續存放
 
-可能原因：
-- 漢字可能使用 lookup table 映射
-- 可能有壓縮或特殊編碼
-- 4 個 tiles 可能分散存放
+### Page 1 漢字位置 (待確認)
+Page 1 (擴展) 漢字的 tile 圖形位置尚未追蹤確認。
+推測可能在 Page 0 之後，但需要進一步驗證。
 
-### 2. Page 1 漢字位置
-Page 1 (擴展) 漢字的 tile 圖形位置未知。
+## 追蹤方法 (已完成)
 
-## 建議追蹤方法
+使用 **Mesen** 模擬器的 debug 功能：
 
-使用 NES 模擬器的 debug 功能追蹤：
-
-1. **FCEUX** 或 **Mesen** 模擬器
-2. 設定 PPU 讀取斷點
-3. 觀察顯示人名時讀取的 ROM 地址
-4. 記錄 tile_id 與實際 ROM 偏移的對應
-
-### 追蹤步驟
-```
-1. 載入遊戲，進入可顯示武將名字的畫面
-2. 設定 PPU VRAM 寫入斷點 (CHR-RAM: $0000-$1FFF)
-3. 觀察哪些 PRG-ROM 地址被讀取並複製到 CHR-RAM
-4. 記錄 tile ID 與 ROM 偏移的關係
-```
+1. 設定 PPU VRAM 寫入斷點 ($1BE0，「曹」字左上角 tile)
+2. 追蹤到 tile 資料先存入 RAM ($04xx)
+3. 再往上追蹤到 PRG ROM 讀取位置
+4. 最終在 Memory Viewer 搜尋 tile 資料，找到 PRG ROM $211C4
 
 ## 相關檔案
 
 | 檔案 | 說明 |
 |------|------|
-| `kanji_tiles_page0.png` | 嘗試匯出的 Page 0 tiles (映射未確認) |
-| `kanji_8E_*.png` | 「曹」字的各種嘗試 |
+| `kanji_export.py` | 漢字圖形匯出工具 |
+| `kanji_output/kanji_atlas_page0.png` | Page 0 完整字型表 (256 字) |
+| `kanji_output/individual/` | 所有個別漢字圖片 |
 
 ## 後續工作
 
-1. 使用模擬器 debug 功能追蹤實際 tile 載入
-2. 確認 tile_id → ROM 偏移映射關係
-3. 匯出所有漢字圖形
+1. ~~使用模擬器 debug 功能追蹤實際 tile 載入~~ ✓
+2. ~~確認 tile_id → ROM 偏移映射關係~~ ✓
+3. ~~匯出所有漢字圖形~~ ✓
 4. 使用 OCR 或人工對照建立正確的 KANJI_TILE_MAP
+5. 追蹤 Page 1 漢字的 ROM 位置

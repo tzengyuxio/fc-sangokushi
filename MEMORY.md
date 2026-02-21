@@ -199,13 +199,25 @@ Tile  9 = コ   Tile 19 = ト   Tile 29 = ホ   Tile 39 = ...
 
 ## 漢字 Tile 對照表 (已完成解析)
 
-### 解析方法
+### 圖形儲存位置 (已確認)
 
-透過比對姓名記錄中的 tile ID (+8, +10, +12) 與已知武將姓名，建立完整的漢字對照表。
+透過 Mesen debugger 追蹤，確認漢字 tile 圖形的 ROM 位置：
+
+```
+PRG_ROM_offset = 0x205E4 + (tile_id + 0x30) × 16
+File_offset = PRG_ROM_offset + 0x10
+```
+
+- **基址 (PRG ROM)**: `0x205E4`
+- **基址 (檔案)**: `0x205F4`
+- **所在 Bank**: 8 (0x20010–0x2400F)
+- **每個漢字**: 64 bytes (4 個 8×8 tiles)
+- **PPU 偏移**: `+0x30` (tile_id + 0x30 = PPU tile index)
 
 ### 統計
-- 總共發現 **238** 個不同的漢字 tile ID
-- 涵蓋所有 256 位武將的姓名用字
+- Page 0: **241** 個不同的漢字 tile ID (0x01-0xFF)
+- Page 1: **67** 個擴展漢字 (0x01-0x42, 需 +9/+11/+13 flag)
+- 總計: **308** 個漢字
 
 ### 部分對照表 (依 tile ID 排序)
 

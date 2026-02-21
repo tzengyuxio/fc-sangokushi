@@ -11,3 +11,4 @@ __pycache__/
 
 # Test output images
 kanji_*.png
+kanji_output/
