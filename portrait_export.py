@@ -64,41 +64,13 @@ PORTRAIT_01_LAYOUT = [
     [24, 25, 28, 29, 31, 32],
 ]
 
-# 手動校正的頭像→排列索引映射 (通過視覺比對確認)
-# 格式: portrait_index: arrangement_index
+# 頭像→排列映射
+# 通用規則: arrangement_index = portrait_index - 3 (適用於 P03+)
+# 以下為 P00, P01, P02 的特殊情況
 MANUAL_PORTRAIT_MAPPING = {
-    # tile_count=32 組 (10 個頭像，8 個排列)
-    # P01: 使用 PORTRAIT_01_LAYOUT (自訂排列)
-    # A2/A17/A18/A27 對 P00/P05/P20/P21/P30 都相同，可共用
-    0: 2,    # 劉備
-    5: 2,    # 孫權 (與劉備共用 A2，顯示相同)
-    20: 2,   #
-    21: 2,   #
-    30: 2,   #
-    # 以下需要各自的排列
-    31: 28,
-    33: 30,
-    36: 33,
-    54: 51,
-    # tile_count=33 組
-    2: 12,
-    11: 8,
-    15: 12,
-    16: 13,
-    17: 14,
-    18: 14,  # A14, A15 都可以，選 A14
-    34: 31,
-    39: 36,
-    48: 45,
-    56: 31,
-    64: 31,
-    # tile_count=35 組
-    63: 60,
-    65: 62,  # A62, A68 都可以，選 A62
-    67: 57,  # A57, A64 都可以，選 A57
-    71: 62,  # A62, A68 都可以，選 A62
-    73: 70,
-    78: 75,
+    0: 2,    # 劉備 (P00 無法用 p-3 公式)
+    # 1: 使用 PORTRAIT_01_LAYOUT (自訂排列，不在此表)
+    2: 12,   # 關羽 (P02 無法用 p-3 公式，實際對應 A12)
 }
 
 
@@ -219,50 +191,36 @@ def generate_portrait(rom, portrait, layout):
 
 
 def build_portrait_arrangement_mapping(portraits, arrangements):
-    """建立頭像到排列的映射（優先使用手動映射，其餘貪婪匹配）"""
+    """建立頭像到排列的映射
+
+    規則發現: arrangement_index = portrait_index - 3 (適用於 P03 以上)
+    P00, P01, P02 需要特殊處理
+    """
     mapping = {}
-    used_arrangements = set()
 
     # 建立排列索引到 layout 的查找表
     arr_by_index = {arr['index']: arr for arr in arrangements}
 
-    # 先處理手動映射
-    for portrait_idx, arr_idx in MANUAL_PORTRAIT_MAPPING.items():
-        if arr_idx in arr_by_index:
-            mapping[portrait_idx] = arr_by_index[arr_idx]['layout']
-            used_arrangements.add(arr_idx)
-
-    # 處理剩餘的非標準頭像
-    non_standard_portraits = [p for p in portraits if not p['is_standard'] and p['index'] not in mapping]
-
-    # 按 tile_count 排序，優先處理 tile 數較少的（更容易找到唯一匹配）
-    non_standard_portraits.sort(key=lambda p: p['tile_count'])
+    # 處理所有非標準頭像
+    non_standard_portraits = [p for p in portraits if not p['is_standard']]
 
     for p in non_standard_portraits:
-        tile_count = p['tile_count']
-        best_arr = None
+        p_idx = p['index']
 
-        # 找 max_tile == tile_count 且未被使用的排列
-        for arr in arrangements:
-            if arr['index'] not in used_arrangements and not arr['is_standard']:
-                if arr['max_tile'] == tile_count:
-                    best_arr = arr
-                    break
+        # 特殊情況: P00, P01, P02 使用手動映射
+        if p_idx in MANUAL_PORTRAIT_MAPPING:
+            arr_idx = MANUAL_PORTRAIT_MAPPING[p_idx]
+            if arr_idx in arr_by_index:
+                mapping[p_idx] = arr_by_index[arr_idx]['layout']
+            continue
 
-        # 如果沒找到，找 max_tile < tile_count 且未被使用的
-        if best_arr is None:
-            for arr in arrangements:
-                if arr['index'] not in used_arrangements and not arr['is_standard']:
-                    if arr['max_tile'] < tile_count:
-                        best_arr = arr
-                        break
-
-        if best_arr:
-            mapping[p['index']] = best_arr['layout']
-            used_arrangements.add(best_arr['index'])
+        # 通用規則: arrangement = portrait - 3
+        arr_idx = p_idx - 3
+        if arr_idx >= 0 and arr_idx in arr_by_index:
+            mapping[p_idx] = arr_by_index[arr_idx]['layout']
         else:
-            # 使用標準排列作為 fallback
-            mapping[p['index']] = STANDARD_LAYOUT
+            # 找不到，使用標準排列
+            mapping[p_idx] = STANDARD_LAYOUT
 
     return mapping
 
