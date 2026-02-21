@@ -67,12 +67,15 @@ PORTRAIT_01_LAYOUT = [
 # 手動校正的頭像→排列索引映射 (通過視覺比對確認)
 # 格式: portrait_index: arrangement_index
 MANUAL_PORTRAIT_MAPPING = {
-    # tile_count=32 組
-    # 1: 使用 PORTRAIT_01_LAYOUT (自訂排列)
-    5: 27,   # 孫權, A2/A17/A18/A27 都可以
-    20: 2,   # A2, A17, A18, A27 都可以
-    21: 17,  # A2, A17, A18, A27 都可以
-    30: 18,  # A2, A17, A18, A27 都可以
+    # tile_count=32 組 (10 個頭像，8 個排列)
+    # P01: 使用 PORTRAIT_01_LAYOUT (自訂排列)
+    # A2/A17/A18/A27 對 P00/P05/P20/P21/P30 都相同，可共用
+    0: 2,    # 劉備
+    5: 2,    # 孫權 (與劉備共用 A2，顯示相同)
+    20: 2,   #
+    21: 2,   #
+    30: 2,   #
+    # 以下需要各自的排列
     31: 28,
     33: 30,
     36: 33,
