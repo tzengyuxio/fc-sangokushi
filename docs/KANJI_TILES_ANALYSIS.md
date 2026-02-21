@@ -168,8 +168,8 @@ ROM 資料: 8E 00 8D 00 00 00
 | 檔案 | 說明 |
 |------|------|
 | `kanji_export.py` | 漢字圖形匯出工具 |
-| `kanji_output/kanji_atlas_page0_labeled.png` | Page 0 字型表 (含座標標籤) |
-| `kanji_output/kanji_atlas_page1_labeled.png` | Page 1 字型表 (含座標標籤) |
+| `kanji_atlas_page0.png` | Page 0 字型表 (含座標標籤) |
+| `kanji_atlas_page1.png` | Page 1 字型表 (含座標標籤) |
 | `kanji_output/individual/kanji_p0_*.png` | Page 0 個別漢字 (241 個) |
 | `kanji_output/individual/kanji_p1_*.png` | Page 1 個別漢字 (66 個) |
 

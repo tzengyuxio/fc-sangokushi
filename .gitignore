@@ -10,5 +10,7 @@ __pycache__/
 *.pyc
 
 # Test output images
-kanji_*.png
 kanji_output/
+
+# Keep atlas images
+!kanji_atlas_*.png
