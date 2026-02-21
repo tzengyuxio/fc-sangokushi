@@ -21,10 +21,12 @@ except ImportError:
 PORTRAIT_PTR_TABLE = 0x1BC38
 PORTRAIT_COUNT = 81
 
-# 武將→頭像映射表
-CHARACTER_PORTRAIT_TABLE = 0x3B214
+# 武將→頭像映射
+# 頭像索引存於姓名表 (0x3A314) 每筆記錄的 byte 14
+# 公式: portrait_index = 姓名表[char_idx * 15 + 14] - 1
+NAME_TABLE = 0x3A314
+NAME_RECORD_SIZE = 15
 CHARACTER_COUNT = 256
-# 實際只有 P00-P37 被武將使用，P38-P80 可能是共用元件或未使用
 
 # 排列表
 ARRANGEMENT_TABLE = 0x1B140
