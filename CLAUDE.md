@@ -42,13 +42,31 @@ python3 sangokushi_extract_v2.py path/to/rom.nes
 - 程式碼註解與文件以中文為主
 - 輸出檔案使用 UTF-8-BOM 編碼 (Excel 相容)
 
+## 頭像調色盤
+
+NES 頭像使用 4 色調色盤：
+
+```python
+PORTRAIT_PALETTE = [
+    (0, 0, 0),        # Index 0: 黑色
+    (247, 216, 165),  # Index 1: 淺膚色
+    (234, 158, 34),   # Index 2: 深膚色
+    (255, 255, 255),  # Index 3: 白色
+]
+```
+
 ## 目前進度
 
 - ✓ 武將資料表完整解析 (256 筆記錄, 含頭像/排列索引)
 - ✓ CSV/XLSX 匯出工具
-- ✓ 頭像系統完整解析
+- ✓ 標準頭像系統完整解析 (P00-P80)
   - 頭像指標表: 0x1BC38 (81 筆 × 4 bytes)
   - 排列表: 0x1B0D4 (81 筆 × 36 bytes)
   - 武將→頭像映射: 姓名表 byte 14
   - 頭像→排列映射: 1:1 對應 (`arrangement = portrait`)
+- ✓ 大眾臉頭像系統解析 (P81-P254)
+  - 19 個 Group 框架 (G00-G18)
+  - 20 個 Template 排列模板 (0x1ED14)
+  - 20 組眼睛/臉部/嘴巴變體
 - ✓ 頭像匯出工具 (portrait_export.py)
+- ✓ 大眾臉探索器 (mob_portrait/variant_explorer/)

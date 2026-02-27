@@ -368,39 +368,133 @@ Index 3: (255, 255, 255)   白色
 | Tile 資料 | Banks 4-6 | Bank 7 (多個基底位址) |
 | 結構 | 完整獨立頭像 | 多組共用基底 + 可變臉部組件 |
 
-### 多組共用基底系統
+### 框架 Group 系統 (已完整解析)
 
-大眾臉頭像**不是**單一基底，而是存在**多組共用基底**：
+大眾臉頭像使用 **19 個 Group** (框架 tile 組) 配合 **8 種 Pattern** (tile 排列模式) 的組合系統。
 
+#### 19 個 Group 位置表
+
+Group 邊界由 **內容區塊** 決定，以全黑 (blank) tiles 為分隔符：
+
+| Group | ROM 基底 | Tiles | 備註 |
+|-------|----------|-------|------|
+| G00 | 0x1C194 | 24 | 舊編號 B |
+| G01 | 0x1C314 | 24 | |
+| G02 | 0x1C494 | 24 | |
+| G03 | 0x1C614 | 24 | |
+| G04 | 0x1C794 | 22 | |
+| G05 | 0x1C914 | 21 | 舊編號 C |
+| G06 | 0x1CA94 | 20 | 注意: 跳過前一個 blank tile |
+| G07 | 0x1CC14 | 20 | |
+| G08 | 0x1CD94 | 21 | |
+| G09 | 0x1CF14 | 24 | |
+| G10 | 0x1D094 | 21 | |
+| G11 | 0x1D214 | 21 | |
+| G12 | 0x1D394 | 22 | 舊編號 E |
+| G13 | 0x1D514 | 22 | |
+| G14 | 0x1D694 | 24 | 舊編號 A (標準參考) |
+| G15 | 0x1D814 | 24 | |
+| G16 | 0x1D994 | 24 | |
+| G17 | 0x1DB14 | 24 | 舊編號 D |
+| G18 | 0x1DC94 | 24 | |
+
+**總計**: 430 內容 tiles + 26 blank 分隔 tiles = 456 tiles
+
+#### 8 種 Pattern 定義
+
+| Pattern | 最大 Tile | 特徵 | 使用 Group |
+|---------|-----------|------|------------|
+| P1 | 23 | 標準 24-tile 排列 | G00-G03, G09, G14-G18 |
+| P2 | 22 | tile 12 重複 | G04 |
+| P3 | 20 | tile 13 重複 | G05, G08, G10 |
+| P4 | 20 | tile 12 重複 | G06 |
+| P5 | 19 | tile 0 重複 (左邊緣) | G07 |
+| P6 | 20 | tile 0 重複 | G11 |
+| P7 | 21 | tile 13 重複 | G12 |
+| P8 | 21 | tile 12 重複 | G13 |
+
+#### 排列模板 (Template) 儲存位置
+
+**ROM 位址**: `0x1ED14`
+**結構**: 20 條記錄 × 36 bytes = 720 bytes
+**編碼**: 固定 tiles 使用 `value - 0x64`，變體位置標記為 `0x00`
+
+| Template | ROM 位址 | Pattern |
+|----------|----------|---------|
+| T00 | 0x1ED14 | P1 |
+| T01 | 0x1ED38 | P1 |
+| T02 | 0x1ED5C | P1 |
+| T03 | 0x1ED80 | P1 |
+| T04 | 0x1EDA4 | P1 (未使用) |
+| T05 | 0x1EDC8 | P2 |
+| T06 | 0x1EDEC | P3 |
+| T07 | 0x1EE10 | P4 |
+| T08 | 0x1EE34 | P5 |
+| T09 | 0x1EE58 | P3 |
+| T10 | 0x1EE7C | P1 |
+| T11 | 0x1EEA0 | P3 |
+| T12 | 0x1EEC4 | P6 |
+| T13 | 0x1EEE8 | P7 |
+| T14 | 0x1EF0C | P8 |
+| T15 | 0x1EF30 | P1 |
+| T16 | 0x1EF54 | P1 |
+| T17 | 0x1EF78 | P1 |
+| T18 | 0x1EF9C | P1 |
+| T19 | 0x1EFC0 | P1 |
+
+#### Group → Template → Pattern 完整對應表
+
+**映射規則**:
+- G00-G03: 使用 T00-T03 (直接對應)
+- G04-G18: 使用 T05-T19 (跳過 T04，offset +1)
+
+⚠️ **T04 未被使用**！ROM 有 20 個 Template，但只有 19 個 Group。
+
+```python
+# Group → Template 映射
+GROUP_TO_TEMPLATE = {
+    0: 0, 1: 1, 2: 2, 3: 3,    # G00-G03 直接對應
+    4: 5, 5: 6, 6: 7, 7: 8,    # G04-G07 跳過 T04
+    8: 9, 9: 10, 10: 11,       # G08-G10
+    11: 12, 12: 13, 13: 14,    # G11-G13
+    14: 15, 15: 16, 16: 17, 17: 18, 18: 19,  # G14-G18
+}
+
+# Group → Pattern (透過 Template)
+GROUP_TO_PATTERN = {
+    0: 1, 1: 1, 2: 1, 3: 1,   # G00-G03 → P1 (標準)
+    4: 2,                      # G04 → P2
+    5: 3,                      # G05 → P3
+    6: 4,                      # G06 → P4
+    7: 5,                      # G07 → P5
+    8: 3,                      # G08 → P3
+    9: 1,                      # G09 → P1
+    10: 3,                     # G10 → P3
+    11: 6,                     # G11 → P6
+    12: 7,                     # G12 → P7
+    13: 8,                     # G13 → P8
+    14: 1, 15: 1, 16: 1, 17: 1, 18: 1,  # G14-G18 → P1 (標準)
+}
 ```
-Group A (基底 0x1D694):
-  ├─ P081 周泰: 基底 + 變體 A1 (眼171/臉234/嘴336)
-  ├─ P082 孫翊: 基底 + 變體 A2 (眼174/臉237/嘴348)
-  └─ 其他成員...
 
-Group B (基底 0x1C194):
-  ├─ P083 孫瑜: 基底 + 變體 B1
-  ├─ P084, P085...: 基底 + 變體 Bx
-  └─ ...
+#### 關鍵發現
 
-Group C, D, E... (其他基底):
-  └─ 各自的成員和變體
-```
+1. **Group 邊界不固定**: 不是每個 Group 都有 24 tiles，範圍 20-24 tiles
+2. **Blank tiles 是分隔符**: 全黑 tiles 標記 Group 邊界，不屬於任何 Group
+3. **G06 特殊**: 起始位址 0x1CA94 (非 0x1CA84)，前一個 blank tile 是分隔符
+4. **Pattern 決定 tile 重用**: 較少 tiles 的 Group 透過 Pattern 重複使用特定 tiles
+5. **T04 未使用**: ROM 有 20 個 Template 但只有 19 個 Group，T04 (0x1EDA4) 是多餘的
+6. **G04+ 有 offset**: G04 開始使用 T05，Group 編號與 Template 編號差 1
 
-**關鍵特性：**
-1. 同組內的頭像共用相同的框架 tiles (頭盔、邊框)
-2. 每組有自己專屬的眼睛/鼻子/嘴巴變體 tiles
-3. 變體規則在組內一致，但不同組有不同的變體 tile 位置
+### 舊編號對照 (參考用)
 
-### 已確認的共用基底
-
-| Group | 基底位址 | 相對 Group A | 已知成員 | 備註 |
-|-------|----------|--------------|----------|------|
-| A | 0x1D694 | 0 tiles | P081 周泰, P082 孫翊, P084 孫桓, P182 糜芳 | 標準框架 |
-| B | 0x1C194 | +336 tiles | P083 孫瑜, P185 傅士仁, P186 周倉 | 標準框架 |
-| C | 0x1C914 | +216 tiles | P131 法正, P165 張昭, P166 張紘, P204 韓玄, P211 鞏志 | 多種框架 |
-| D | 0x1DB14 | -72 tiles | P195 徐盛, ... | 標準框架 |
-| E | 0x1D394 | +48 tiles | P168 虞翻, ... | 不同框架 (Row 4-5) |
+| 舊編號 | 新編號 | 基底位址 | 已知成員 |
+|--------|--------|----------|----------|
+| A | G14 | 0x1D694 | P081 周泰, P082 孫翊, P084 孫桓, P182 糜芳 |
+| B | G00 | 0x1C194 | P083 孫瑜, P185 傅士仁, P186 周倉 |
+| C | G05 | 0x1C914 | P131 法正, P165 張昭, P166 張紘, P204 韓玄, P211 鞏志 |
+| D | G17 | 0x1DB14 | P195 徐盛, ... |
+| E | G12 | 0x1D394 | P168 虞翻, ... |
 
 **重要發現: Group C 內有多種框架 tile 組**
 
@@ -759,10 +853,10 @@ P085: 0  P090: 2  P095: 4
 ### 待解決問題
 
 1. **變體索引計算機制**: RAM 中的變體值 (01, 03, 02, 00, 03) 不是直接存在 ROM，而是動態計算的
-2. **$1EFE4 索引表用途**: 174 bytes，值 0-4，可能是 Group 或模板選擇器，但與已知 Group 不完全對應
+2. **$1EFE4 索引表用途**: 174 bytes，值 0-4，可能是 Group 或模板選擇器，但與 19 個 Group 的對應關係待確認
 3. **命令流 $E9AD 的完整解析**: 組件載入的命令序列如何產生變體參數
 4. **Tile 繪製階段 ($0C=$24)**: 36 次迴圈如何排列 6×6 tiles
-5. **框架類型選擇機制**: 同一 Group 內如何決定使用哪種框架 (如 Group C 的 0-23 vs 48-67)
+5. **portrait_id → Group 映射**: 174 個大眾臉頭像 (P081-P254) 如何對應到 19 個 Group
 
 ### 已確認的關鍵發現
 
@@ -785,8 +879,11 @@ P085: 0  P090: 2  P095: 4
 
 ### 已解決問題
 
-1. ~~其他 Group 基底~~: 已確認 Groups A-E 的基底位址
+1. ~~其他 Group 基底~~: 已確認 19 個 Group (G00-G18) 的精確 ROM 位址
 2. ~~portrait_matcher 工具~~: 可自動從遊戲截圖識別 layout 和變體索引
+3. ~~Group → Pattern 映射~~: 已確認 19 個 Group 對應到 8 種 Pattern 的完整對照表
+4. ~~Group 邊界問題~~: 確認以 blank tiles 為分隔符，Group 大小 20-24 tiles 不等
+5. ~~Template 儲存與對應~~: 20 個 Template 於 0x1ED14，G00-G03 直接對應 T00-T03，G04+ 跳過 T04 使用 T05+
 
 ### 調試進度 (進行中)
 
@@ -1130,12 +1227,19 @@ python tools/portrait_matcher.py mob_portrait/screenshot/法正.png C --portrait
 
 ### 輸出檔案
 
-**Group A (0x1D694):**
+**Group 框架分析 (mob_portrait/all_tiles/):**
+- `_group_00.png` ~ `_group_18.png`: 各 Group 框架圖 (使用對應 Pattern 排列)
+- `_all_groups.png`: 19 個 Group 總覽 (5×4 排列)
+- `_group_pattern_matrix_v4.png`: Group × Pattern 完整對照矩陣
+- `_20_groups.html`: 分析報告 (含 ROM 位址表)
+- `_analysis.html`: 系統架構分析報告
+
+**Group A (0x1D694 = G14):**
 - `mob_portrait/tiles/layout_P81_P82.txt`: P081, P082 的完整 layout
 - `mob_portrait/tiles/zhou_tai_portrait.png`: P081 周泰頭像
 - `mob_portrait/tiles/sun_yi_portrait_corrected.png`: P082 孫翊頭像
 
-**Group B (0x1C194):**
+**Group B (0x1C194 = G00):**
 - `mob_portrait/tiles_P083/layout_P083.txt`: P083 layout 與分析
 - `mob_portrait/tiles_P083/sun_yu_portrait.png`: P083 孫瑜頭像
 - `mob_portrait/tiles_P083/tile_000.png ~ tile_799.png`: 800 個 tiles

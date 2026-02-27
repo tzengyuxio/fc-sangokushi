@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大眾臉頭像探索器 - FC 三國志</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #ffd700;
+            text-align: center;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 30px;
+        }
+        .panel {
+            background: #252540;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .panel h2 {
+            color: #00d4ff;
+            margin-top: 0;
+            font-size: 18px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        .panel h3 {
+            color: #8f8;
+            margin: 15px 0 10px 0;
+            font-size: 14px;
+        }
+
+        /* Group selector */
+        .group-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+        .group-btn {
+            background: #333;
+            border: 2px solid #555;
+            color: #ccc;
+            padding: 8px 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .group-btn:hover {
+            background: #444;
+            border-color: #888;
+        }
+        .group-btn.selected {
+            background: #1a4a1a;
+            border-color: #4f4;
+            color: #4f4;
+        }
+
+        /* Variant selectors */
+        .variant-scroll {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .variant-item {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            transition: background 0.2s;
+        }
+        .variant-item:hover {
+            background: #333;
+        }
+        .variant-item.selected {
+            background: #2a4a2a;
+            outline: 2px solid #4f4;
+        }
+        .variant-item img {
+            image-rendering: pixelated;
+            margin-right: 10px;
+        }
+        .variant-item span {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* Preview area */
+        .preview-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #portrait-canvas {
+            image-rendering: pixelated;
+            border: 3px solid #555;
+            border-radius: 8px;
+            background: #000;
+        }
+        .preview-info {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+        }
+        .preview-info code {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #ffa;
+        }
+
+        /* Template visualization */
+        .template-vis {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 2px;
+            margin-top: 10px;
+            font-size: 10px;
+        }
+        .template-cell {
+            background: #333;
+            padding: 4px;
+            text-align: center;
+            border-radius: 2px;
+        }
+        .template-cell.variant {
+            background: #553;
+            color: #ff8;
+        }
+
+        /* Info panel */
+        .info-section {
+            margin-top: 20px;
+        }
+        .info-table {
+            width: 100%;
+            font-size: 12px;
+        }
+        .info-table td {
+            padding: 4px 8px;
+        }
+        .info-table td:first-child {
+            color: #888;
+        }
+        .info-table td:last-child {
+            color: #8f8;
+            text-align: right;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .btn {
+            background: #444;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #555;
+        }
+        .btn.primary {
+            background: #1a6a1a;
+        }
+        .btn.primary:hover {
+            background: #2a8a2a;
+        }
+
+        /* Known combinations panel */
+        .known-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .known-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            background: #252525;
+            transition: background 0.2s;
+        }
+        .known-item:hover {
+            background: #333;
+        }
+        .known-item .name {
+            flex: 1;
+            font-size: 13px;
+        }
+        .known-item .idx {
+            font-size: 11px;
+            color: #888;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>大眾臉頭像探索器</h1>
+
+    <div class="container">
+        <!-- Left Panel: Group & Variant Selection -->
+        <div class="panel">
+            <h2>選擇 Group 框架</h2>
+            <div class="group-grid" id="group-selector"></div>
+
+            <h3>眼睛 (Eyes)</h3>
+            <div class="variant-scroll" id="eyes-selector"></div>
+
+            <h3>臉部 (Faces)</h3>
+            <div class="variant-scroll" id="faces-selector"></div>
+
+            <h3>嘴巴 (Mouths)</h3>
+            <div class="variant-scroll" id="mouths-selector"></div>
+        </div>
+
+        <!-- Center Panel: Preview -->
+        <div class="panel preview-area">
+            <h2>頭像預覽</h2>
+            <canvas id="portrait-canvas" width="288" height="288"></canvas>
+            <div class="preview-info">
+                <p>Group: <code id="info-group">-</code> | Template: <code id="info-template">-</code></p>
+                <p>Eyes: <code id="info-eyes">-</code> | Faces: <code id="info-faces">-</code> | Mouths: <code id="info-mouths">-</code></p>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="randomize()">隨機組合</button>
+                <button class="btn primary" onclick="downloadPortrait()">下載頭像</button>
+            </div>
+
+            <div class="info-section">
+                <h3>Template 排列</h3>
+                <div class="template-vis" id="template-vis"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Known Combinations -->
+        <div class="panel">
+            <h2>已知組合 (遊戲內)</h2>
+            <div class="known-list" id="known-list"></div>
+
+            <div class="info-section">
+                <h3>Group 資訊</h3>
+                <table class="info-table">
+                    <tr><td>ROM 基底</td><td id="info-base-addr">-</td></tr>
+                    <tr><td>Tile 數量</td><td id="info-tile-count">-</td></tr>
+                    <tr><td>Pattern 類型</td><td id="info-pattern">-</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/data.js"></script>
+    <script>
+        // Current selection state
+        let currentGroup = 0;
+        let currentEyes = 0;
+        let currentFaces = 0;
+        let currentMouths = 0;
+
+        // Image cache
+        const imageCache = {};
+
+        // Known combinations from the game (to be populated)
+        const KNOWN_COMBINATIONS = [
+            { name: "周泰", pid: "P081", group: 14, eyes: 17, faces: 18, mouths: 16 },
+            { name: "孫翊", pid: "P082", group: 14, eyes: 18, faces: 19, mouths: 18 },
+            { name: "孫瑜", pid: "P083", group: 0, eyes: 2, faces: 1, mouths: 2 },
+            { name: "孫桓", pid: "P084", group: 14, eyes: 18, faces: 15, mouths: 15 },
+            { name: "法正", pid: "P131", group: 5, eyes: 7, faces: 8, mouths: 6 },
+            { name: "張昭", pid: "P165", group: 5, eyes: 3, faces: 3, mouths: 10 },
+            { name: "張紘", pid: "P166", group: 5, eyes: 4, faces: 4, mouths: 11 },
+            { name: "虞翻", pid: "P168", group: 12, eyes: 13, faces: 10, mouths: 10 },
+            { name: "糜芳", pid: "P182", group: 14, eyes: 15, faces: 15, mouths: 15 },
+            { name: "傅士仁", pid: "P185", group: 0, eyes: 4, faces: 5, mouths: 6 },
+            { name: "周倉", pid: "P186", group: 0, eyes: 6, faces: 6, mouths: 7 },
+            { name: "徐盛", pid: "P195", group: 17, eyes: 16, faces: 19, mouths: 18 },
+            { name: "韓玄", pid: "P204", group: 5, eyes: 5, faces: 5, mouths: 5 },
+            { name: "鞏志", pid: "P211", group: 5, eyes: 5, faces: 6, mouths: 8 },
+        ];
+
+        // Pattern descriptions
+        const PATTERN_DESC = {
+            1: "P1 (標準 24-tile)",
+            2: "P2 (tile 12 重複)",
+            3: "P3 (tile 13 重複)",
+            4: "P4 (tile 12 重複)",
+            5: "P5 (tile 0 重複)",
+            6: "P6 (tile 0 重複)",
+            7: "P7 (tile 13 重複)",
+            8: "P8 (tile 12 重複)",
+        };
+
+        // Group to Pattern mapping
+        const GROUP_TO_PATTERN = {
+            0: 1, 1: 1, 2: 1, 3: 1,
+            4: 2, 5: 3, 6: 4, 7: 5,
+            8: 3, 9: 1, 10: 3,
+            11: 6, 12: 7, 13: 8,
+            14: 1, 15: 1, 16: 1, 17: 1, 18: 1,
+        };
+
+        // Load image with caching
+        function loadImage(src) {
+            if (imageCache[src]) {
+                return Promise.resolve(imageCache[src]);
+            }
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    imageCache[src] = img;
+                    resolve(img);
+                };
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        // Initialize selectors
+        function initSelectors() {
+            // Group buttons
+            const groupSelector = document.getElementById('group-selector');
+            for (let i = 0; i < 19; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'group-btn' + (i === 0 ? ' selected' : '');
+                btn.textContent = `G${i.toString().padStart(2, '0')}`;
+                btn.onclick = () => selectGroup(i);
+                groupSelector.appendChild(btn);
+            }
+
+            // Variant selectors
+            initVariantSelector('eyes', 20);
+            initVariantSelector('faces', 20);
+            initVariantSelector('mouths', 20);
+
+            // Known combinations
+            initKnownList();
+        }
+
+        function initVariantSelector(type, count) {
+            const container = document.getElementById(`${type}-selector`);
+            for (let i = 0; i < count; i++) {
+                const item = document.createElement('div');
+                item.className = 'variant-item' + (i === 0 ? ' selected' : '');
+                item.innerHTML = `
+                    <img src="assets/variants/${type}/${type}_${i.toString().padStart(2, '0')}.png"
+                         width="${type === 'mouths' ? 72 : 72}" height="${type === 'mouths' ? 48 : 24}">
+                    <span>#${i}</span>
+                `;
+                item.onclick = () => selectVariant(type, i);
+                container.appendChild(item);
+            }
+        }
+
+        function initKnownList() {
+            const container = document.getElementById('known-list');
+            KNOWN_COMBINATIONS.forEach(combo => {
+                const item = document.createElement('div');
+                item.className = 'known-item';
+                item.innerHTML = `
+                    <span class="name">${combo.name}</span>
+                    <span class="idx">${combo.pid} | G${combo.group.toString().padStart(2, '0')}</span>
+                `;
+                item.onclick = () => loadKnownCombo(combo);
+                container.appendChild(item);
+            });
+        }
+
+        function selectGroup(idx) {
+            currentGroup = idx;
+            document.querySelectorAll('.group-btn').forEach((btn, i) => {
+                btn.classList.toggle('selected', i === idx);
+            });
+            updatePreview();
+            updateInfo();
+        }
+
+        function selectVariant(type, idx) {
+            if (type === 'eyes') currentEyes = idx;
+            else if (type === 'faces') currentFaces = idx;
+            else if (type === 'mouths') currentMouths = idx;
+
+            const container = document.getElementById(`${type}-selector`);
+            container.querySelectorAll('.variant-item').forEach((item, i) => {
+                item.classList.toggle('selected', i === idx);
+            });
+            updatePreview();
+            updateInfo();
+        }
+
+        function loadKnownCombo(combo) {
+            selectGroup(combo.group);
+            selectVariant('eyes', combo.eyes);
+            selectVariant('faces', combo.faces);
+            selectVariant('mouths', combo.mouths);
+
+            // Scroll variant selectors to show selected items
+            ['eyes', 'faces', 'mouths'].forEach(type => {
+                const container = document.getElementById(`${type}-selector`);
+                const selected = container.querySelector('.selected');
+                if (selected) selected.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        }
+
+        async function updatePreview() {
+            const canvas = document.getElementById('portrait-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 288, 288);
+
+            const scale = 6;
+            const group = GROUPS[currentGroup];
+
+            try {
+                // Draw framework
+                const frameworkImg = await loadImage(`assets/framework_${currentGroup.toString().padStart(2, '0')}.png`);
+                ctx.drawImage(frameworkImg, 0, 0, 288, 288);
+
+                // Draw variants in their positions based on template
+                // Eyes go in row 2, columns 1-3
+                const eyesImg = await loadImage(`assets/variants/eyes/eyes_${currentEyes.toString().padStart(2, '0')}.png`);
+                ctx.drawImage(eyesImg, 8 * scale, 16 * scale, 24 * scale, 8 * scale);
+
+                // Faces go in row 3, columns 1-3
+                const facesImg = await loadImage(`assets/variants/faces/faces_${currentFaces.toString().padStart(2, '0')}.png`);
+                ctx.drawImage(facesImg, 8 * scale, 24 * scale, 24 * scale, 8 * scale);
+
+                // Mouths go in rows 4-5, columns 1-3
+                const mouthsImg = await loadImage(`assets/variants/mouths/mouths_${currentMouths.toString().padStart(2, '0')}.png`);
+                ctx.drawImage(mouthsImg, 8 * scale, 32 * scale, 24 * scale, 16 * scale);
+
+            } catch (e) {
+                console.error('Error loading images:', e);
+                ctx.fillStyle = '#f00';
+                ctx.font = '14px sans-serif';
+                ctx.fillText('Error loading images', 20, 144);
+            }
+        }
+
+        function updateInfo() {
+            const group = GROUPS[currentGroup];
+            const pattern = GROUP_TO_PATTERN[currentGroup];
+
+            document.getElementById('info-group').textContent = `G${currentGroup.toString().padStart(2, '0')}`;
+            document.getElementById('info-template').textContent = `T${group.template.toString().padStart(2, '0')}`;
+            document.getElementById('info-eyes').textContent = currentEyes;
+            document.getElementById('info-faces').textContent = currentFaces;
+            document.getElementById('info-mouths').textContent = currentMouths;
+
+            document.getElementById('info-base-addr').textContent = group.baseAddr;
+            document.getElementById('info-tile-count').textContent = group.tileCount;
+            document.getElementById('info-pattern').textContent = PATTERN_DESC[pattern] || `P${pattern}`;
+
+            // Update template visualization
+            updateTemplateVis(group.grid);
+        }
+
+        function updateTemplateVis(grid) {
+            const container = document.getElementById('template-vis');
+            container.innerHTML = '';
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 6; col++) {
+                    const cell = document.createElement('div');
+                    const val = grid[row][col];
+                    cell.className = 'template-cell' + (val === null ? ' variant' : '');
+                    cell.textContent = val === null ? '?' : val;
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        function randomize() {
+            selectGroup(Math.floor(Math.random() * 19));
+            selectVariant('eyes', Math.floor(Math.random() * 20));
+            selectVariant('faces', Math.floor(Math.random() * 20));
+            selectVariant('mouths', Math.floor(Math.random() * 20));
+        }
+
+        function downloadPortrait() {
+            const canvas = document.getElementById('portrait-canvas');
+            const link = document.createElement('a');
+            link.download = `portrait_G${currentGroup}_E${currentEyes}_F${currentFaces}_M${currentMouths}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            initSelectors();
+            updatePreview();
+            updateInfo();
+        };
+    </script>
+</body>
+</html>
