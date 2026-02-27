@@ -45,13 +45,13 @@
             font-size: 14px;
         }
 
-        /* Group selector */
-        .group-grid {
+        /* Head selector */
+        .head-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 5px;
         }
-        .group-btn {
+        .head-btn {
             background: #333;
             border: 2px solid #555;
             color: #ccc;
@@ -61,11 +61,11 @@
             font-size: 12px;
             transition: all 0.2s;
         }
-        .group-btn:hover {
+        .head-btn:hover {
             background: #444;
             border-color: #888;
         }
-        .group-btn.selected {
+        .head-btn.selected {
             background: #1a4a1a;
             border-color: #4f4;
             color: #4f4;
@@ -235,16 +235,16 @@
     <h1>大眾臉頭像探索器</h1>
 
     <div class="container">
-        <!-- Left Panel: Group & Variant Selection -->
+        <!-- Left Panel: Head & Variant Selection -->
         <div class="panel">
-            <h2>選擇 Group 框架</h2>
-            <div class="group-grid" id="group-selector"></div>
+            <h2>選擇 Head 框架</h2>
+            <div class="head-grid" id="head-selector"></div>
 
             <h3>眼睛 (Eyes)</h3>
             <div class="variant-scroll" id="eyes-selector"></div>
 
-            <h3>臉部 (Faces)</h3>
-            <div class="variant-scroll" id="faces-selector"></div>
+            <h3>鼻子 (Noses)</h3>
+            <div class="variant-scroll" id="noses-selector"></div>
 
             <h3>嘴巴 (Mouths)</h3>
             <div class="variant-scroll" id="mouths-selector"></div>
@@ -255,8 +255,8 @@
             <h2>頭像預覽</h2>
             <canvas id="portrait-canvas" width="288" height="288"></canvas>
             <div class="preview-info">
-                <p>Group: <code id="info-group">-</code> | Template: <code id="info-template">-</code></p>
-                <p>Eyes: <code id="info-eyes">-</code> | Faces: <code id="info-faces">-</code> | Mouths: <code id="info-mouths">-</code></p>
+                <p>Head: <code id="info-head">-</code> | Template: <code id="info-template">-</code></p>
+                <p>Eyes: <code id="info-eyes">-</code> | Noses: <code id="info-noses">-</code> | Mouths: <code id="info-mouths">-</code></p>
             </div>
 
             <div class="controls">
@@ -276,7 +276,7 @@
             <div class="known-list" id="known-list"></div>
 
             <div class="info-section">
-                <h3>Group 資訊</h3>
+                <h3>Head 資訊</h3>
                 <table class="info-table">
                     <tr><td>ROM 基底</td><td id="info-base-addr">-</td></tr>
                     <tr><td>Tile 數量</td><td id="info-tile-count">-</td></tr>
@@ -290,7 +290,7 @@
         // === EMBEDDED DATA START ===
 // Auto-generated data for variant explorer
 
-const GROUPS = [
+const HEADS = [
   { idx: 0, template: 0, baseAddr: "0x1c014", tileCount: 24, grid: [[0, 1, 4, 5, 8, 9], [2, 3, 6, 7, 10, 11], [12, null, null, null, 14, 15], [13, null, null, null, 16, 17], [18, null, null, null, 20, 21], [19, null, null, null, 22, 23]] },
   { idx: 1, template: 1, baseAddr: "0x1c194", tileCount: 24, grid: [[0, 1, 4, 5, 8, 9], [2, 3, 6, 7, 10, 11], [12, null, null, null, 14, 15], [13, null, null, null, 16, 17], [18, null, null, null, 20, 21], [19, null, null, null, 22, 23]] },
   { idx: 2, template: 2, baseAddr: "0x1c314", tileCount: 24, grid: [[0, 1, 4, 5, 8, 9], [2, 3, 6, 7, 10, 11], [12, null, null, null, 14, 15], [13, null, null, null, 16, 17], [18, null, null, null, 20, 21], [19, null, null, null, 22, 23]] },
@@ -313,17 +313,17 @@ const GROUPS = [
   { idx: 19, template: 19, baseAddr: "0x1dc94", tileCount: 24, grid: [[0, 1, 4, 5, 8, 9], [2, 3, 6, 7, 10, 11], [12, null, null, null, 14, 15], [13, null, null, null, 16, 17], [18, null, null, null, 20, 21], [19, null, null, null, 22, 23]] },
 ];
 
-const VARIANT_COUNTS = { eyes: 20, faces: 20, mouths: 20 };
+const VARIANT_COUNTS = { eyes: 20, noses: 20, mouths: 20 };
 
 const FRAMEWORKS = {
   0: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAAFf0lEQVR4nO2dvW4TURCF7yIXcUFJyhSkgGegckpeIAWWkEjFS6TiMZCCFAmKPIUrniEUUFA6JYXdLRLBQ/B4x3Pv7hrOnfNV1sa+G+9ojs/c32Z59TT94vGLd/cvfny+HOnK9Pk8/Y3c/fjiW+rB0tHOIe+ladv2/kXTNFtXsnhU8BnyD2HAwGhWtx8PpoQeMSkTimajM/+JAI6njcwwMBgwMJrxXKL2hBpDDdZfPnW103arivEpD4cU0ixtlPcww8BgwMCYjFcvl6H1YXWbtlRuvdE9Q1X0pzyUKaEWQN1OT7GV78UMA4MBS9Fdok55bX4Md3f07FWfK41quaw+1ZX4AfotPQ+KGQYGAxa1L1Fy38jrrMo3S+XWjk95KnFDdQ232VMkPVrNwhkVSiIYk8GV0PBXWnk8WmR8qunWvayaetf/PPdX4p4y2WMXPeLPDAODAQvWlyjSoRH/aTgu0RmPuztS7QgebdTtaN3ziJLWxjIBNP554z3MMDAYsBguUdRAS4dWwl0pP+/SRtNtzgtU16N7ZY7U8I1D9TfquzPDwGDAYvQl6nq55+yX8cZZBPmmD3S484rnXkY7g0/LoSSiQkmM4RKXV5d7vVNvBdvfTlPkJHXLxr2MGn+X1+3UxrJpOexLhIeSGGzE2fBXhtXRlI35tv1GijVDuUR9pefKHbpEVCiJMeYlGpluaKP8SaOFq0ydDIy7C4MrvPEe41MCXSI8lMQYI86C9jzGuHCWXunxkQd06mdPROE94z6eK7plY9qSZ+iZGQYGAxajL1GLkqEGZXo1lMoNro2C1nzjV8AzgdP4EwtnVCiJwVyikFUhArHcoY37ew6HKqU1zDAwGLBgfYmS6WdnZ6lGbl5/3zvvyBgBN+Ztls1WYoaBwYBFdYlxWHfPzxE8M9g9nQ+clwgPJTFYX2LWGEodHHXPZmzbTrvoGXXiGucKoSTGcIm6+pvNZikG634zJz074howw8BgwILthBOQqWM9S891jqKN0tPLEWdUKIlgjLgTTq2sumdxC1nroHV/o/GcmWFgMGBg0CXuwViVo3sFPftIiLhljfVLO8wwMBgwMOgSy+tljwM0nGSZP2eGgcGAgUGX6MXwe55RFU1ZTwUzDAwGLJhLlF3Czq9T3Uy7ZyEKnh28e57/xQwDgwEL5hL/9P9fv09Vs3LMtTb29BZ6PmdmGBgMWNRznFM6SVFd4sqxRm+okxCZYWAwYFHPcX75tk6XuFgs/HNvsvYFoksMASURDLrEcfsSPTvq0CXWDCURDLrEIV1i1i43Zf6cGQYGAxbs7BW5cn59Urckto5a2FBL4+yVLG1khoHBgIFBlzjKfomew6c0Hm1khoHBgIFBl+h1iYfE0EZmGBgMWDCXKC6o1s3BFkUjzh48TlJHhxkGBgMWY8Q5qx6MM+KcJYCeZyjvkVVCzDAwGDD81Su7Rku3r5T1ldW6q/ZUPbEyAdTodphhYDBgYAx2rF71hbMma5/YrDLZeA8zDAwGDF8Ssxyg9LBVv3rFIOvMvp4iyQwDgwEDY6Kn2xkZau70UqckemRKHyMlz6dMLQUdC2YYGAwYGBPj6GHfuUtRjqNabpTQYNcs7tT1DDOf82+YYWAwYGBMjP3zjR2u4tBuhOvuw2mXc5P3aG3Uz9CjhMa5qMwwMBgwMJqeaiDeqdYFfTdq9YqhhBrj0RkYv1PMMDAYMNi+xMGryDo4LlJC4cmbr/cvlunUfwvDnzPDwGDAwJhk5XW62B6CqV4b26KfDDGHGs/oldEgMwwMBqxGSfTMQJ7N6iycD6l7HphhYDBgsCPOnlTVZWD1q1fulO55vnJP3TPElhkGBgOGPy+xTBtrPaHveDS/Z+iecXdmGBgMWMLiJ2WjFVqpSdHiAAAAAElFTkSuQmCC",
-  1: "data:image/png;base64,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",
+  1: "data:image/png;base64,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",
   2: "data:image/png;base64,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",
   3: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAAFg0lEQVR4nO2dMW4UQRBFe9EGdkCIQwII4AxE65ALEBgJCSIuQcQxkEBCgoBTOOIMEEBAuA4J7GyRMC5W+z3lqp624Xf/F1nDzM7OlOrzu6q7d7F+e6/85vaj1+d//Pz86pqO7D98ev6H3RQ5ePF95xzniHH65cM1fXm8F2J3twdENpvN+R+LxWLnqhS3Kq4R/xAFjIw/6XkzOCqHOEp4eiEmew+OdnQmoleRI60+B4/M1EZlGBkKGBmLlEuss2eOANZ5ws2Fqpx9/bijjX8fbFok8ZFRwVKmF3E+p04b7SplGBkK2BguEdO5lTlEnKHrZlob69Sybixs98KTnc+ps4vKMDIUMDKWdbVEy+I6bUzh2MWzgBLiERx34zn4OPakeHeskeKrw8eJvDG0r8owMhSwwWqJKBR/P/oi5euUEDkIdDqMSL0xoo1IyhOmjjho4MyKJHEMl2hH0C6aYsykbpRtoMohW2W9owoldF6do3voG/H7OJcrw8hQwEbtODuOCzWkruHSyrU6Jzsj6LrKYaq7jXYRz1GGkaGAdd1xTrVNnRFrxPj9EyXcDzRBUtqYepnqOHeIJHHUWmKqUue0cevu3lwJ67rbdb4xdbIyjAwFrIxeSzS2fGOBnu/uEcRpyG6mlRArh5HRMX6fSOcan90+xxQMq4tOvRFRLZEeSSIZN1pLTF0V6XTsBRQs5UhT62Kaz1TUwLlDJIljuES3fVAqSmSl7BYna3Xv6dS9UnNd7CkiKodGdEvPEx1n9/uo48yJJLGMvsZ55hreujLjadUWCgguQqzzsfjskcaNoUk4/SBJHMwlGqllLDcgbjOx14K+MTKiNyKW0nD0U+0VViSJZCy35rqgPYscKU2U8L9lHdDGSN3SaT+lUIaRoYANNi/RjM3jl29Kj3x69uP8D/u/w6l2Np/5gyjDyFDABnOJW6PIPiURcbo8M5VQ8xI7RJI4WC2x1YpmIvam+yy2VrrOE2qNc4dIEgdziZbFq9WqjMFZ1czJyOygiGwqw8hQwAZbvZJaidwH+7B/jhFZ4ZLaJhGbO8owMhQwMpq1iXt1iZ+m2yut9s9JoQwjQwEjQy7xClJKaEciSljnz5VhZChgZMglXsHx8XGjlYZtUIaRoYCRIZcY5bI5h0dzlFAucQgkiWTIJUZdYmrO4cwddRyUYWQoYIO5RDvS6+qVmfsuOls61L1nZRgZChgZcokNaomIaoniD5JEMuQSG9QSnXMQucSxkCSSIZfYspbo9FlSS1QclGFkKGBkyCVGqVNCXH5iqOM8BJJEMuQSr2VeorOj+My1kMowMhQwMuQSr8C8nLNGz1HC1DA54huVYWQoYGTIJaZriRFNSzlA7YTTM5JEMrR6JUpk9rV5OWcrMPxA5zf70Dcqw8hQwMiQS0y7xJSpUy1xdCSJ/C4xlenNtzX4/9mDtSrOL1Y7v4KacpLaL5EVSWJHu2pjPjpTSsZhAX0W1EZ8h5FzUEjxZGUYGQoYGUsnMTEfsWvQ/S/01WljZLcHrCU6r1cukRVJIhnLSGIa7jrfUSRxDW1lZ35O6hdOERySK8PIUMDIWKIVjMxJ3rpqlJ+jWl8oocNl+96U+M7bznuWS2RFkkjrEiO6NyBrUEJ00bjWz7QR32FqFQwqqjKMDAWM2CVO2kXHBZliPHlf+uYgoIT4Tyfv7u9cftl4GRsuZUotlWFkKGC0k3CMO8+/NRlFDqiEdW8Mb+H8P6UMI0MBo+04R5QQs7h7bdxUCaCZQyTSvXI+RxlGhgJGK4mWfY424u+zW4KvVnfLqJyAcKV0L4UyjAwFjHaqdsrvoTZ2zwlUBR1m6p6DMowMBYyMJYrbulxtFw27/PDwsPTIYlrzW+leapStDCNDAStc/AKVeCcvzXobWwAAAABJRU5ErkJggg==",
-  4: "data:image/png;base64,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",
+  4: "data:image/png;base64,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",
   5: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAAEBklEQVR4nO2dMW7UQBSGbbQNBSU5ADScgWpbzhAJCSQkLkHFJZCQoIKCC1DaFWeAAgrKUKZYukWCzZBk4rczs2Nv/nnfV0W7XiXxaL79/d543J+9e9D95d7j1/9+uPvotLtKyjGB7XZ77ZVf7x9ee+Xk+Y+9n8r6eC2MPz780viYvu+n3oqP2Xz9cMh5vpP8v8CtgAETYzdPL1NLkmVuvLVsE3SXdXDZeWaGicGAidHXEqBxTJZMhNhOx8WsYwKkxAZBiWIsmhKlBVjLjaREX6BErynRoQljwokqqwyQEhsEJTpLiSlNB8+cRZIMhFOX1XBhhonBgHXeU+JR2ERWCa8YHPe/iL9WSIkNghLFmLGWaGDkoqxPbYpMeBQ3lvWYSInyoEQxlkiJsaZSnFbdewbnX15Nlf7W63VXg2EYpt7Kargww8RgwMRYIiVmGWw+76UoMRDcWEuJ4zhOtZ6pJbYMShRjZcpt90PKMTFlTlvShEchvkwOJzPlPDPDxGDAxFhdulTMmJhxawByKfsyYoaJwYC5S4nCMe88ul5ekrIvI2aYGAyYGKTEpUmrJZISWwEldt5TojQn89cBwt4Xmbf4kRI1QYlikBKvsGSN1HAjKbEdUKLXdYm1FqvcNsaLxTO1uEmAO1iX2CAo0es9zijRhp1wnIISxaCWuBBlzRRqifKgRK93rzx5+bZrkfGwC+cDHyvAukR5UKIY1BIrKNG4iTtQq2bLDBODARODlLiHT09/TvWgjQSYstUPKdEFKFEMUmJ2Sox1FzebjGNIib5AiWKQEssvnI0ds1PWtJMSXYASxSAl1myvGEVFUqJTUKIYpMSFlBhDSnQBShSDlJitROOmv7iEeOCGsXSc5UGJzu5xbn5dYgpGUTEma8NY1iXKgxLFICWmpsSUJnKAlAg7UKIYpMRsbno8Vjdly0DZVmCkRHlQohikxNSUmJIJA+Hg+8++H/KIUmqJ8qBEMeg4l9+9kkLsxqxHlJIS5UGJYpASKyzCMXrQWXGRlNggKFEMaonH35SbZ6+0DEoUg5RYoeMcMKKgcQUdICU2CEoUg1pizW0fYiUalC3eZoaJwYCJQUrMbq+kGMyIggakxAZBiWJQS5yFLBNSS2wZlCgGKTH1wjmstf797WP6lg4hW7ITjlNQohikxHnJekYzd680CEoUg5S4h2EY0sNhDDvheAclikHHeV4lGnD3igtQorvnOJ+2/Wj76vAcZ1+gRGcpMbQPWlXicJESs5rIKZASXYASW6wlptCqEj+/eVH3etmAdYkNghLF6LN6BP8/FkWmVpU45jx7pV5XehJmmBgMmBirWHeBeIZWv3gE243x6DDDxGDAxFjFLxnzEY4OM0wMBqzT4g9ECHQTKq1TMwAAAABJRU5ErkJggg==",
   6: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAAEbElEQVR4nO2dsY7TQBCGbXQFV9BeSUEDz0CVp6AAiYL3oOI9rkCCgpe4VDwDNBSUbq+464LERaNTJp7Mrp1cfu/3VZHlOIlH8+fLruPth+tX3X+uPv15eFC0xWP73P369vDg8s2HsZ39kev2yTDXa/nPVXTkF2+/7Dy9iGcVz4EnhIKJ0Qfh5vEt759u+2w2m+1r9P28oTQ86T7+cxmZb4GikPT70GFiUDDZSCyyxEwkFuVDwJmY5DCeYPZJb39+HtunyBKDU0eHiUHB2rDEOlM6fwMM8J+rbotRFJK2Mx0mBgVrzBKPJ2xna4lX7rRYpnlLtC0Zec6ceTpMDAq2aEvM6GLd72U7zp636ER0LjJBWuTDdZaYiXqDDhODgolxYY/qZpx9UGSGyLw7ZRjGrcwfJ/NaGRX0c0P+1f1rBVvs/BR9dixRFSKxDUs0gix6/vr9w4P7398PulPGEu/ckTMCGbyf4B0ebywx440BdJgYFKwxSzT2dfpuywdpkAm3y8SRgzlf/yzbYh8ncMtgfrluSwBjicuBSBTjpJZ4tlv68UA2fc24LpYIuxCJXeuW6C3Ituz7WTrzlsG9seD9GME4YdGsykRvzIxt0mFiULBWLTGYmTUsBI7HZdU0d5FbYolQAJHYqiUGNnVK7sZf1EfZvvQ+bJtFv46DZwUX4TCWuByIRDGOOJZ4/tyWXAtUN5M+cX7ZQ4eJQcFatURphsRV049SbpI3+mwsOvN0mBgUTAwssf5vgBlv9Ez8NqHDxKBgbfzH2W9ZrVbdElmv1wf3yV0VuUvdeabDxKBgrVpiy5FoZP5fgyW2BZEoBmOJc+LHG425bJwOE4OCNWaJxruvL7uudUsMmOs802FiULDGLPHRD+dlRmIGf91RMISIJbYFkSgGllhvicF1NcGF2ROhw8SgYGJgicXUrdBnYIltQSSKgSXWW2IgfsFyVBOhw8SgYGJgifVk1isMnsWMcxMQiWJgiXPOOAeL7mGJjUIkioElFhOMHGb+tIIltgWRKAaWWGyJmdVLZ5dDgw4Tg4KJgSVmqbuuZqIT8u8VeYhEMbDErCUGkXgCOTToMDEomBhYYjH77oU4ujOW2DpEohhYYrElek4ghwYdJgYFEwNLnJPZnZCxRHmIRDGwxBks0a/hwlgibCESxcASs/g7ZmfAEluHSBQDS6y/LtE45SpddJgYFEwM1l45wI+PfyuWrGIsEbYQiWJgicWROPvSzEXQYWJQMDEYSzyAJeFms9lZmTTYGUuELUSiGFhidizRR+LxFmsOoMPEoGBiYIkHKErCzK0UuS6xLYhEMbDEA9zc3FREoof7JTYKkSgGlngi5vJGOkwMCtaYJT5atHTVLdoS+76f98h1Z54OE4OCLdESW+Z+fH75SbyRDhODgomRMh+7Es//mddYqiWuS9ZeqaPoO4gOE4OCiXHh74Pqcy9IQpiOnfnhevT2EbYPHSYGBRPjIkhC349dVzPZCuU3lNieZ18dOkwMCtZp8Q8HJMZ+9Bo/FgAAAABJRU5ErkJggg==",
-  7: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAAESElEQVR4nO2dMZLTMBSGbSYFW1Cy5RZQwBmo3HIFqKDiElQcgxmo4BypOMNuAQfIllt4u1DYPDJ+sSJ7ZCe/9H2VRqvEjjTv319Pkl1X/2hvf3SFh1+fu8KzN1+6wtXr9wu1ianx3/Mwpeb645+usN/vu0Jd14Oax7ufXeHpq3djbQI1a/bhk8El4cJhwMTY7L69GFSZhrS3fU1MG8Pi+oBhjY990yJr7DWtct9jNQENsTame4bVHNzz8BJe93yN/13+Dj3z+pkIE4MBE2MTELdJAmiiFIN9apIre3RezmtawG161bUa+10x9zPplwZ+e6DGi6S1IcLEYMDEqC3o/PQtQEAWYj5eIG2EkAa6zj5OhInBgOm7xBiRjAneArWxjcgTTsJPpYkwMRiwrHOJB2m9IX6KVyBXEVPgmD60NuQS5UESM3KJho/iQPDCUeb1IS5RHiQxR5dolDwpnod11CQBxCXmA5IoRh3Igx1oY7mLKU3TJPme7XY7qJk0lWZfoipIYlYuMY0njNmYnZx2/KIXoue4xCJAEnPMJRqTpMxLUHIlbCN0L2Bxz5IHCLhx/8/I2hhEmBgMWNa5xFRMOtAXqLmatVHcEzOHTUVAfjm9kiFIYtYu8dK0MTkraGOcSxzej0GEicGAZe0Sj+27S6NXMRPeNrUS+mnpCuASywJJFGPBXCJM7UNcYoYgiWKcJ5cIhwQWUzi9Ig+SmLVL9BuP/f69t5++VjLcjP2haW7G9hOe5RigQYSJwYBl5BL9s/6OZQ6XvsNM2EUsWrHinCFIYkYuMeZUBUQS08/kEjMESczx9EpMjqtA2innHFP1MxEmBgOW9ZNwzrJ38dJoIw4G+gxDqn4mwsRgwKrS371SshLuxv9TpOpnIkwMBkwMXOJk5u3JxCUWCpIoBi4xpRIGzDMusVCQRDFwiSnny4E1elxioSCJYuAS5+ONX2ANGpdYKEiiGLjEE/jn1cQQfIxP34YV5yJAEsXAJa4ELrFQkEQxcIknsJeeBB6VFvPUMnKJhYIkioFLnM+kl7ngEgsFSRQDl3iCwMmUQJtUAsjpFXmQRDFwiSfwG2wCVjD5YgqnV+RBEsXAJZ5g3ktYcInQgySKgUtMwHICiEuUB0kUA5cYy36/7wp1Xa82TSaXKA+SKAYuMRZTQpOpwGsXcInQgySKgUucbA49ywkgLlEeJFEMXOIi4BKhB0kUA5d4AjOHZhfvv78ca7zCVJoIE4MBEwOXuAi4ROhBEsXAJZ7Am8N5OxVxiYWCJIqBS1yW5FNpIkwMBkwMXOJK4BILBUkszCVWVe+CmqapsuZ61nw57jkSfQGXmCFIYtYu0QSwHO7H15dTMUkkiTAxGDAxRrcfH11i+P8xt285V5e43W6XvkTM26wMIkwMBkyMjZe7wNJq4AQHzOb5h99dYVcNex6XKA+SKMYmoIQxm5NhHbU0iDAxGLBKi7962VkPOIE+XAAAAABJRU5ErkJggg==",
+  7: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAAESElEQVR4nO2dMZLTMBSGbSYFW1Cy5RZQwBmo3HIFqKDiElQcgxmo4BypOMNuAQfIllt4u1DYPDJ+sSJ7ZCe/9H2VRqvEjjTv319Pkl1X/2hvf3SFh1+fu8KzN1+6wtXr9wu1ianx3/Mwpeb645+usN/vu0Jd14Oax7ufXeHpq3djbQI1a/bhk8El4cJhwMTY7L69GFSZhrS3fU1MG8Pi+oBhjY990yJr7DWtct9jNQENsTame4bVHNzz8BJe93yN/13+Dj3z+pkIE4MBE2MTELdJAmiiFIN9apIre3RezmtawH161bUa+10x9zPplwZ+e6DGi6S1IcLEYMDEqC3o/PQtQEAWYj5eIG2EkAa6zj5OhInBgOm7xBiRjAneArWxjcgTTsJPpYkwMRiwrHOJB2m9IX6KVyBXEVPgmD60NuQS5UESM3KJho/iQPDCUeb1IS5RHiQxR5dolDwpnod11CQBxCXmA5IoRh3Igx1oY7mLKU3TJPme7XY7qJk0lWZfoipIYlYuMY0njNmYnZx2/KIXoue4xCJAEnPMJRqTpMxLUHIlbCN0L2Bxz5IHCLhx/8/I2hhEmBgMWNa5xFRMOtAXqLmatVHcEzOHTUVAfjm9kiFIYtYu8dK0MTkraGOcSxzej0GEicGAZe0Sj+27S6NXMRPeNrUS+mnpCuASywJJFGPBXCJM7UNcYoYgiWKcJ5cIhwQWUzi9Ig+SmLVL9BuP/f69t5++VjLcjP2haW7G9hOe5RigQYSJwYBl5BL9s/6OZQ6XvsNM2EUsWrHinCFIYkYuMeZUBUQS08/kEjMESczx9EpMjqtA2innHFP1MxEmBgOW9ZNwzrJ38dJoIw4G+gxDqn4mwsRgwKrS371SshLuxv9TpOpnIkwMBkwMXOJk5u3JxCUWCpIoBi4xpRIGzDMusVCQRDFwiSnny4E1elxioSCJYuAS5+ONX2ANGpdYKEiiGLjEE/jn1cQQfIxP34YV5yJAEsXAJa4ELrFQkEQxcIknsJeeBB6VFvPUMnKJhYIkioFLnM+kl7ngEgsFSRQDl3iCwMmUQJtUAsjpFXmQRDFwiSfwG2wCVjD5YgqnV+RBEsXAJZ5g3ktYcInQgySKgUtMwHICiEuUB0kUA5cYy36/7wp1Xa82TSaXKA+SKAYuMRZTQpOpwGsXcInQgySKgUucbA49ywkgLlEeJFEMXOIi4BKhB0kUA5d4AjOHZhfvv78ca7zCVJoIE4MBEwOXuAi4ROhBEsXAJZ7Am8N5OxVxiYWCJIqBS1yW5FNpIkwMBkwMXOJK4BILBUkszCVWVe+CmqapsuZ61nw57jkSfQGXmCFIYtYu0QSwHO7H15dTMUkkiTAxGDAxRrcfH11i+P8xt285V5e43W6XvkTM26wMIkwMBkyMjZe7wNJq4AQHzOb5h99dYVcNex6XKA+SKMYmoIQxm5NhHbU0iDAxGLBKi7962VkPOIE+XAAAAABJRU5ErkJggg==",
   8: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAAD/ElEQVR4nO2dMZIaMRBFBxcJwaYcwJHP4Gju4SoHvocj32MzO/AlIPIZ7MSBQ9INdjMcUO7acu+KlhgJvvReNAUDDHTp89Xd0qwmx+H+7elg++m3f3bZc4zHn19fe+rhx+fTwd37L6eDzbsPUx3smu2z7NPtW/hz7HoS38Jfc9lv+CbzG8GVIWBirFoKYJZI3hqHgFoaWdqY9fswwsQgYGKs/EMIYBDTvYg2JtwmLrFnkEQxmrrEXnnM0UZc4lggiWLgEltro4FLHAIkUQxcYusM5IUFF0aYGARMjIouEdKUTaUZYWIQsFFdYhmJymwDNtWaeSJzat/Dg0vsECRRjBYu8bq6F8FkyrPUv0BWD49/FS5RFSRRjIou8faVMCKJ9bTRvyEusUOQRDEqusQ+JHFbLVlKxXkIkMRpdJcopITXlUQPLrFDkMRpdJfYhyRuqylhpNBskEuUB0kUY+0HXSTHdSO9Nw+uenv72DV7bYz8zowwMQiYGEoucRPYcKaMSPF3KfzF05fYM0iiGAK5RG+i7hbyhNetqkTWs3gYYWIQsFFd4jzPU4/s9/v2PdsGuUR5kMRRXSKSmIadcAYFSRQDl9jaJRr0JQ4BkigGLrGRJC7lxhlhYhAwMXCJ5ZJYdjcBA5c4BEiiGLjEbEmMdNFk9WMbuMQOQRLFWJc1ZrNf4pS5qVdZYzYVZ3mQRDG0V6+0JKFphn8k8j7+5axe6QckUQxyiUuWVxK3eI70mdOq3SFIohjkEssl0Zu6yO2oEnvJJnq2DUaYGARMDHKJVWbQXiTt5CwlJJcoD5IoBrnEuvhl1F4Js5ZaM8LEIGBi4BIXMIcJcXuWOTzvEu0cA5coD5IoBrnEaC4x0Y4YSSr62XGkLcfDCBODgImBSywnoWCRvW195pC+xA5BEsXAJUZdYqKGUtaWkzgZl9gPSKIY9CUu0JcY2WM8q9Mm8c6MMDEImBi4xCqt2qZgWXto4xI7BEkUA5eYXV4xKTsej6eD1WoVX6yHSxwLJFEM+hKj+EqxKWHk7nuR+8WwxrlDkEQxcIln+P7xz9kFKUZiQV/ZXajIJcqDJIqBS6zrJA/3Xhtf7c/BJXYIkigGLjGaS7TM4dOvb3F3l+jQNnCJPYMkioFLrEJiiZ/vxknMxFnjLA+SKAYu8Qy73S5uDj1Z2UV2wukQJFEMXGJdXpovZ9SgcYnyIIlisMa5Ed4BRmbQVJzlQRLFYPVKdOLsuxAvpGytHyNMDAI2hksch6d/KcTFeamt8f9zcInyIIlihJxPpBAwz/M0jb7GuYysmz4zwsQgYGKsI7XRZy4xo9gKl+P/jBhhYhAw2YqzkXW/OViQRMrC5tSMMDEI2KTFX9glo18xDE58AAAAAElFTkSuQmCC",
   9: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAAEe0lEQVR4nO2dMW7bMBSGpcJDPGRsxg7tkJ4hk3ONdGrv0Sn3aIEC7Tk89Qzp0B7AHTM4mzs4fQlM6PlRoh3/5PdNhiJRjAh++CWSUt/9Z7PZbH88/Pqx/XH/8/P2x8WnP/F9Vl/ebn+cX91uf8zff7Cz7OxjR5VilVPy+u77UA2zjrItdjXsf49sSc/uXOdX8YrCKUCDidGn3TlLgLZP3/dTPGPleHXtH0/hkHX2tPKRks8ub3aOcspJj7KLmZYTaQt6mBg0mBgzU4d1uvXVY5/9+/XdUMdM9zGsO2cJMBVFumU9rBf7LyJntyQZMaFhJdu5rByrhpHKLVJOpC3oYWLQYGIcNSWmJsySUkpaw0g4LH6/7Gg8rZhTTipJUqI8KFGMY6REx4SRR3/OPn1y67q+6/bqLpIkx+W9Z0ft7hMpx3j98ffjUaREdVBi13pKPFwmjEhyXG50SP9B5xRZzxudckiJ9YASxXhyVESAxe1UfOh5HZDSEe6ys6rKiHPNoMQaU2LEKs5DxdROJ5IS14HxmiOMkkfqzIizKiix6pQYGRoonhLHTTU8SzxcqhzHhJFx88gWZ1oOPUwMGqzqZ4mRxOW4MRKZJkpyk1PnLEk6Jiw1bu7Ym5SoCkqsOiVGBlNKjWsUZ1VIthETTlxEw+qVekCJjY04R1Ki/elFmBcacXZMOE62kYWBpER5UGIbKTHrVvpkuQ8MqY8beo5IMity8yxRFZTYakoUMmFkznbWpCBSIgyCErvWU6K0Ei8KTY90JBlJm6TEekCJYsysh2Yt3yv+Uq8TYVVo6njEhM4Wpy3oYWLQYK2mxMVi0dXIcrmccvjElzzwLFEelNjqGufr6+uuRpbTlDhx+R4pUR6U2O6bcN4crdKKOHMOs64zPUwMGqyxZ4lP0/a+1ZkSIzgjSlnPCSPXmR4mBg0mBimxpAmd8fdSaZweJgYNJgYpcQ/OqpNxC2RIiW2BEsUgJe7BmY3jDBnblhTnjdmkxApBiWKQErNxTGg8i5S7h5MS2wIlikFKHE9qwlSSWd9VISVWCEoUg5R4EMatTGHEuUJQohikxGwii5TTcMiIc6OgRDFIidk4n0s4v7otOzGbeYnyoEQxSIlRInNv0nA4UYDMS5QHJYpBShyPszy81GAKKVEelCgGKTGKec/ujiMvyiAltg5KFIOUmI3zLdfiAiQlyoMSxSAlllzGUlyAPEuUByWKQUosACkRBkGJYpASozhvwyYlwiAoUQxSYpSJ30zhWWKjoEQxSIkFPlBFSoRBUKIYpMSSkBJhF5QoBilxD86cQ2fnw91K08PEoMHEICUehMPdStPDxKDBxCAl7sH5dHUEUmLroEQxSImHpfitND1MDBpMDFLikeB9iY2CEhtLicZiUfmn7ec598sOfd/vbCEl1gxKrDolNsjD8PhyKbIkSQ8TgwYTY+Z0zLSHRnaujHmhcOiQLodxLi89TAwaTIxZqjsj7ZjtmPBFcJYKGvQwMWgw2ZSYes+xJRTk7PImfpNODxODBuu0+AcEZDG0yCThGgAAAABJRU5ErkJggg==",
   10: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAAFCUlEQVR4nO2dsW4TQRCG75CLuEhLSUETnoEqLS9AkUgUSEi8BBUvgYSUIhIUvABlUvEMpKGgdOvC6UxhGCyPb25mby/w7/xfdbL3zj6v5ve/M7t7fadYXT3dHTx+/UO/O9qm7K0HaLOq9Mrm+6fdwfLZ5UGb0+fvD97S38do47mLR6PnkP8KdhgYfS0J2m63u4P7u89DiqHxKI+wHL6gvo5BWWP5PidnF7uDvu9HT9f6KXjkV8MIA4MdBsaRoC4TSYn99bd3o6cbaCXULB3+SlPmCcvEzfh0usRcUBLBeAiXGJI7QaRVNGStXvFgKJiB3KlxXx6R9AigcR0NIwwMdliX3SUaShjKnhlKuCy6TtnQNfTlJ34f4yzmElGhJLboEj2Im5IMm0dMyoQiREgbhYm/xnxDaUYYGOwwMMYLBPaA1xhFGpXZiYIzsXgRkiB972WutQy6RHgoifgu0RA3I78XqkdoJhYvPHgKQB7xD43xPZ8VKkgxwsBghzXkEkPlAx3XZT4tJICb2i7RmPkzkTL9pEuEh5KYLJdo6Ex1l3g6TUgNVxZSwlr5T7rEFFASm644lwlXraLtA4yXDZ9Wa2WKJ+mqr8yKMyqUxBwusVapYj6W88tv9fwnV680CCUxq0v8twJYxnx5Qq5xJr+hJOZYveKRTQ9lC1L06UKt6wie5OR8AqhhhIHBDsuxeqW6OfRo47qSAHquLIQWcXtcdNlaHuYSUaEkZl3jDDReLjOHIeNX3XsLjDAw2GFZXeL5+XnXIre3t1Wq0gJdYi4oiWAstACWbf2ah9O/o/XLobnWBiFvqX9wRhgY7DAwFh4BpEjuo3VPzzAUtQxN1PH8zowwMNhhWXOJeQbOwsQRtIa5xAahJGbdL7F5SQyt0/Hs5FD2OzPCwGCHgUGXOMKXVz/9s3E8u2EY0CU2CCURDLrEsEs09oigSySHUBLBoEssl0S6RDIOJREMusR5XWJoL0QNc4nwUBJzzEvkBMXu2Gwc4xkEen5O2e/MCAODHQYGXeIsLlFDl5gUSiIYdInzusRj21nQJWaCkphsjbP4ohdvP3ZZXeLa8eQCusSkUBKTrXHec0pPumSshx2gMaZeXQ3OVGQusUEoiWDQJc7iEj3P4+N+iSmgJILBnXDm3RtH2FPLwd1y6BIbhJKYYyeczKyHayhGm2PF6MNRNnfCaRBKIhh0iWG0A/TsoFi2FzfnJcJDScyRS9SeJ0/FeeXIE3oeJcNcYgooiU0/x9mYipxHEjdF87G1NpY9/ZkRBgY7LNlznJufl/j1w5uDWzZULrTqWTfWcI0zPJTEFnOJOq71K3nmJZ5GHqt6zDcOVl60NjKXCA8lEd8lli3mzZxL1Hiyix7fSJcIDyUR3yUao2MNXWLUE4bG1HSJ8FASYV2ioYQebcyTSxQ8/xSe2TiGNuoPZYSBwQ4DY3EsKxigeZd4cnbx53D8WXuh0bHnH0e3YYSBwQ4DY+HZxUVzJNKv23SJ93efR9v49tCuo42MMDDYYfgDZyGUS3x53aZLvLm52R30fe/f/2FiVcX4CEYYGOww2IGz4BlB0yUWK+FexWRQAEUb9XUYYWCwwxqahCN48v/NP9p+4xjeepRQzpIspYzNPUv8GGFgsMPwyyta7ozaaB7Ww7ccUkJjOrehutKGEQYGOwyMxV5FtRv1Kp59pBtju92qOsvhLYc8oWC+cjnUhhEGBjusw+IXn/8Vm5++MCAAAAAASUVORK5CYII=",
@@ -361,7 +361,7 @@ const EYES = {
   19: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAAAYCAIAAADWASznAAAA9klEQVR4nO2XsQ0CMQxFHVdQ0GYAGpiBUaBjDyr2oGMVZqBigLRXpAzFESPliyjOUfnuV1bOiS356efiCBRu2zHw51exsjlcx2B4XDpWUC271vvTGMTnvVjBVkVMRsVkVE6V3cfkRAJVjfnMpNmJMZlHMYLnqJhE7xK6WtwVba2luoeT7U+MyTyKAaapwgMJnMgbCjuc48SY5uOKQyZHhOZTgarCpMpvK44nQtrtT4zJqJzqXv77G0fUZ5jhN6VmJ8Y0w2dLSumT5Fz7p5abGgmUA7+daYqG5V/RIooxs7TaHctsYAB3oVqYFEmOVK8UDYsrkhm9AfEanSWbviusAAAAAElFTkSuQmCC",
 };
 
-const FACES = {
+const NOSES = {
   0: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAAAYCAIAAADWASznAAAA5klEQVR4nO2XMQ7CMAxFHSsLQ1cOwMQZuAob9+jEPbrBUTgDLBygawa6haHUA5aiJCQgvvImK2nqSnmya0MLj+tpDlbb/dtKDO7Sz8H6cM84LknHYTMH3e4Yn1TDBAoTKEYi7/1ryZgMl4Q8k5OcdIuBsqWdhL0xJlCsRNPtXDuZVkgTI3CnjmsnYW+MCRRTqiomFcMPK2eApuLfYr9ZFQVpvvWcZAKFCRQbmFZKeSLv0SrqZ/JyufavCNSg8zq1njJkgg6IFyBpAHdtgoauilNKp44xUG8J2rdx6IvUSSZQ+NcfUIsnaVN1g/shmF4AAAAASUVORK5CYII=",
   1: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAAAYCAIAAADWASznAAAA2klEQVR4nO2YvQ0CMQxGv1gpoLiWAWhgBkaBjj2o2IMORmEGaBiANgV0obg7F1iKcr+ID15lRbFd+MlS4lATYywD51wZPC5HNGe63OSnh/OuDIrVvkUvW0cRkCIgxfWlYiMD+3IyGAP5JyYgxWv0vJ5G62q9bbcVC5OlctJOTECv4mSxrsPKk+FQAzvu0l+cmIAU/5GtOAICUgSk+Pth/raghiPRovf1KCBFQIqfbW9d8lWhHKX1Tk7Bjk4KSBGQ4lQPddKeWCv0dZAw2dZJkGiR86IJ/88cfDsvRcdSysJZ+bEAAAAASUVORK5CYII=",
   2: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAAAYCAIAAADWASznAAAA6ElEQVR4nOWXuQ0CMRBFxyMHEJBSAAnUQCmQ0QcRfWwGpVADJBTg1AFkJlg8ASOtfC1If180suRD+k9j21DkeTv3xXyz/xrJomy6vx77YrE9FWzq43SBCRQmUIxUIYTPkDG/V7G5k0ygMIFipXrdLzULiYGVlBk4ocSY4FWcrXexrJIqpRmKt65btTUQPzEmUGyrrpiFfpe6rupenlBiTKBY/UQcj4FLfHl41Djp4xNR1oFNjAkU28pA3eg0ch1rRDz9F84y0MUtYBNjAsXorihpSr6VX2ltYErHG/hK+wRdYRPjfx9gLN4mpVbBGbad6QAAAABJRU5ErkJggg==",
@@ -409,9 +409,9 @@ const MOUTHS = {
 // === EMBEDDED DATA END ===
 
         // Current selection state
-        let currentGroup = 0;
+        let currentHead = 0;
         let currentEyes = 0;
-        let currentFaces = 0;
+        let currentNoses = 0;
         let currentMouths = 0;
 
         // Image cache
@@ -419,49 +419,49 @@ const MOUTHS = {
 
         // Known combinations from the game
         const KNOWN_COMBINATIONS = [
-            { name: "周泰", pid: "P081", group: 15, eyes: 17, faces: 18, mouths: 16 },
-            { name: "孫翊", pid: "P082", group: 15, eyes: 18, faces: 19, mouths: 18 },
-            { name: "孫瑜", pid: "P083", group: 1, eyes: 2, faces: 1, mouths: 2 },
-            { name: "孫桓", pid: "P084", group: 15, eyes: 18, faces: 15, mouths: 15 },
-            { name: "法正", pid: "P131", group: 6, eyes: 7, faces: 8, mouths: 6 },
-            { name: "張昭", pid: "P165", group: 6, eyes: 9, faces: 8, mouths: 6 },
-            { name: "張紘", pid: "P166", group: 6, eyes: 9, faces: 8, mouths: 8 },
-            { name: "虞翻", pid: "P168", group: 13, eyes: 13, faces: 10, mouths: 10 },
-            { name: "糜芳", pid: "P182", group: 18, eyes: 15, faces: 15, mouths: 15 },
-            { name: "傅士仁", pid: "P185", group: 19, eyes: 15, faces: 16, mouths: 17 },
-            { name: "周倉", pid: "P186", group: 17, eyes: 19, faces: 17, mouths: 19 },
-            { name: "徐盛", pid: "P195", group: 18, eyes: 16, faces: 19, mouths: 18 },
-            { name: "韓玄", pid: "P204", group: 8, eyes: 5, faces: 5, mouths: 5 },
-            { name: "鞏志", pid: "P211", group: 8, eyes: 5, faces: 6, mouths: 8 },
-            { name: "李肅", pid: "P120", group: 16, eyes: 17, faces: 17, mouths: 19 },
-            { name: "李傕", pid: "P121", group: 10, eyes: 13, faces: 14, mouths: 13 },
-            { name: "蔡邕", pid: "P122", group: 10, eyes: 14, faces: 12, mouths: 14 },
-            { name: "郭汜", pid: "P123", group: 11, eyes: 10, faces: 11, mouths: 12 },
-            { name: "張濟", pid: "P124", group: 11, eyes: 11, faces: 14, mouths: 13 },
-            { name: "華雄", pid: "P125", group: 16, eyes: 17, faces: 15, mouths: 16 },
-            { name: "徐榮", pid: "P127", group: 11, eyes: 13, faces: 10, mouths: 10 },
-            { name: "胡軫", pid: "P128", group: 16, eyes: 18, faces: 19, mouths: 18 },
-            { name: "趙岑", pid: "P129", group: 16, eyes: 18, faces: 15, mouths: 15 },
-            { name: "董旻", pid: "P130", group: 11, eyes: 14, faces: 13, mouths: 11 },
-            { name: "陳琳", pid: "P092", group: 5, eyes: 8, faces: 6, mouths: 7 },
-            { name: "田豐", pid: "P093", group: 5, eyes: 9, faces: 7, mouths: 9 },
-            { name: "沮授", pid: "P095", group: 5, eyes: 9, faces: 8, mouths: 6 },
-            { name: "高覽", pid: "P097", group: 1, eyes: 3, faces: 1, mouths: 2 },
-            { name: "袁譚", pid: "P099", group: 2, eyes: 0, faces: 1, mouths: 2 },
-            { name: "袁熙", pid: "P100", group: 2, eyes: 2, faces: 1, mouths: 2 },
-            { name: "黃祖", pid: "P111", group: 10, eyes: 12, faces: 11, mouths: 12 },
-            { name: "張允", pid: "P117", group: 4, eyes: 4, faces: 4, mouths: 3 },
-            { name: "蔡和", pid: "P118", group: 4, eyes: 3, faces: 4, mouths: 3 },
-            { name: "蔡中", pid: "P119", group: 4, eyes: 1, faces: 4, mouths: 3 },
-            { name: "鄧賢", pid: "P135", group: 6, eyes: 8, faces: 6, mouths: 7 },
-            { name: "高沛", pid: "P138", group: 0, eyes: 2, faces: 3, mouths: 1 },  // T04? Group待確認
-            { name: "文聘", pid: "P214", group: 18, eyes: 18, faces: 16, mouths: 17 },
-            { name: "馬鐵", pid: "P146", group: 2, eyes: 1, faces: 0, mouths: 0 },
-            { name: "侯選", pid: "P147", group: 17, eyes: 15, faces: 15, mouths: 15 },
-            { name: "李堪", pid: "P149", group: 3, eyes: 2, faces: 3, mouths: 1 },
-            { name: "程銀", pid: "P148", group: 2, eyes: 3, faces: 0, mouths: 0 },
-            { name: "張橫", pid: "P150", group: 17, eyes: 15, faces: 16, mouths: 17 },
-            { name: "闞澤", pid: "P189", group: 7, eyes: 7, faces: 7, mouths: 7 },
+            { name: "周泰", pid: "P081", head: 15, eyes: 17, noses: 18, mouths: 16 },
+            { name: "孫翊", pid: "P082", head: 15, eyes: 18, noses: 19, mouths: 18 },
+            { name: "孫瑜", pid: "P083", head: 1, eyes: 2, noses: 1, mouths: 2 },
+            { name: "孫桓", pid: "P084", head: 15, eyes: 18, noses: 15, mouths: 15 },
+            { name: "法正", pid: "P131", head: 6, eyes: 7, noses: 8, mouths: 6 },
+            { name: "張昭", pid: "P165", head: 6, eyes: 9, noses: 8, mouths: 6 },
+            { name: "張紘", pid: "P166", head: 6, eyes: 9, noses: 8, mouths: 8 },
+            { name: "虞翻", pid: "P168", head: 13, eyes: 13, noses: 10, mouths: 10 },
+            { name: "糜芳", pid: "P182", head: 18, eyes: 15, noses: 15, mouths: 15 },
+            { name: "傅士仁", pid: "P185", head: 19, eyes: 15, noses: 16, mouths: 17 },
+            { name: "周倉", pid: "P186", head: 17, eyes: 19, noses: 17, mouths: 19 },
+            { name: "徐盛", pid: "P195", head: 18, eyes: 16, noses: 19, mouths: 18 },
+            { name: "韓玄", pid: "P204", head: 8, eyes: 5, noses: 5, mouths: 5 },
+            { name: "鞏志", pid: "P211", head: 8, eyes: 5, noses: 6, mouths: 8 },
+            { name: "李肅", pid: "P120", head: 16, eyes: 17, noses: 17, mouths: 19 },
+            { name: "李傕", pid: "P121", head: 10, eyes: 13, noses: 14, mouths: 13 },
+            { name: "蔡邕", pid: "P122", head: 10, eyes: 14, noses: 12, mouths: 14 },
+            { name: "郭汜", pid: "P123", head: 11, eyes: 10, noses: 11, mouths: 12 },
+            { name: "張濟", pid: "P124", head: 11, eyes: 11, noses: 14, mouths: 13 },
+            { name: "華雄", pid: "P125", head: 16, eyes: 17, noses: 15, mouths: 16 },
+            { name: "徐榮", pid: "P127", head: 11, eyes: 13, noses: 10, mouths: 10 },
+            { name: "胡軫", pid: "P128", head: 16, eyes: 18, noses: 19, mouths: 18 },
+            { name: "趙岑", pid: "P129", head: 16, eyes: 18, noses: 15, mouths: 15 },
+            { name: "董旻", pid: "P130", head: 11, eyes: 14, noses: 13, mouths: 11 },
+            { name: "陳琳", pid: "P092", head: 5, eyes: 8, noses: 6, mouths: 7 },
+            { name: "田豐", pid: "P093", head: 5, eyes: 9, noses: 7, mouths: 9 },
+            { name: "沮授", pid: "P095", head: 5, eyes: 9, noses: 8, mouths: 6 },
+            { name: "高覽", pid: "P097", head: 1, eyes: 3, noses: 1, mouths: 2 },
+            { name: "袁譚", pid: "P099", head: 2, eyes: 0, noses: 1, mouths: 2 },
+            { name: "袁熙", pid: "P100", head: 2, eyes: 2, noses: 1, mouths: 2 },
+            { name: "黃祖", pid: "P111", head: 10, eyes: 12, noses: 11, mouths: 12 },
+            { name: "張允", pid: "P117", head: 4, eyes: 4, noses: 4, mouths: 3 },
+            { name: "蔡和", pid: "P118", head: 4, eyes: 3, noses: 4, mouths: 3 },
+            { name: "蔡中", pid: "P119", head: 4, eyes: 1, noses: 4, mouths: 3 },
+            { name: "鄧賢", pid: "P135", head: 6, eyes: 8, noses: 6, mouths: 7 },
+            { name: "高沛", pid: "P138", head: 0, eyes: 2, noses: 3, mouths: 1 },  // T04? Head待確認
+            { name: "文聘", pid: "P214", head: 18, eyes: 18, noses: 16, mouths: 17 },
+            { name: "馬鐵", pid: "P146", head: 2, eyes: 1, noses: 0, mouths: 0 },
+            { name: "侯選", pid: "P147", head: 17, eyes: 15, noses: 15, mouths: 15 },
+            { name: "李堪", pid: "P149", head: 3, eyes: 2, noses: 3, mouths: 1 },
+            { name: "程銀", pid: "P148", head: 2, eyes: 3, noses: 0, mouths: 0 },
+            { name: "張橫", pid: "P150", head: 17, eyes: 15, noses: 16, mouths: 17 },
+            { name: "闞澤", pid: "P189", head: 7, eyes: 7, noses: 7, mouths: 7 },
         ];
 
         // Pattern descriptions
@@ -476,13 +476,13 @@ const MOUTHS = {
             8: "P8 (tile 12 重複)",
         };
 
-        // Group to Pattern mapping
-        const GROUP_TO_PATTERN = {
-            0: 1, 1: 1, 2: 1, 3: 1, 4: 1,  // G00-G04: P1 (24-tile)
-            5: 2, 6: 3, 7: 4, 8: 5,        // G05-G08
-            9: 3, 10: 1, 11: 3,            // G09-G11
-            12: 6, 13: 7, 14: 8,           // G12-G14
-            15: 1, 16: 1, 17: 1, 18: 1, 19: 1,  // G15-G19: P1 (24-tile)
+        // Head to Pattern mapping
+        const HEAD_TO_PATTERN = {
+            0: 1, 1: 1, 2: 1, 3: 1, 4: 1,  // H00-H04: P1 (24-tile)
+            5: 2, 6: 3, 7: 4, 8: 5,        // H05-H08
+            9: 3, 10: 1, 11: 3,            // H09-H11
+            12: 6, 13: 7, 14: 8,           // H12-H14
+            15: 1, 16: 1, 17: 1, 18: 1, 19: 1,  // H15-H19: P1 (24-tile)
         };
 
         // Load image from embedded data
@@ -503,19 +503,19 @@ const MOUTHS = {
 
         // Initialize selectors
         function initSelectors() {
-            // Group buttons
-            const groupSelector = document.getElementById('group-selector');
+            // Head buttons
+            const headSelector = document.getElementById('head-selector');
             for (let i = 0; i < 20; i++) {
                 const btn = document.createElement('button');
-                btn.className = 'group-btn' + (i === 0 ? ' selected' : '');
+                btn.className = 'head-btn' + (i === 0 ? ' selected' : '');
                 btn.textContent = `G${i.toString().padStart(2, '0')}`;
-                btn.onclick = () => selectGroup(i);
-                groupSelector.appendChild(btn);
+                btn.onclick = () => selectHead(i);
+                headSelector.appendChild(btn);
             }
 
             // Variant selectors
             initVariantSelector('eyes', 20, EYES);
-            initVariantSelector('faces', 20, FACES);
+            initVariantSelector('noses', 20, NOSES);
             initVariantSelector('mouths', 20, MOUTHS);
 
             // Known combinations
@@ -544,16 +544,16 @@ const MOUTHS = {
                 item.className = 'known-item';
                 item.innerHTML = `
                     <span class="name">${combo.name}</span>
-                    <span class="idx">${combo.pid} | G${combo.group.toString().padStart(2, '0')}</span>
+                    <span class="idx">${combo.pid} | G${combo.head.toString().padStart(2, '0')}</span>
                 `;
                 item.onclick = () => loadKnownCombo(combo);
                 container.appendChild(item);
             });
         }
 
-        function selectGroup(idx) {
-            currentGroup = idx;
-            document.querySelectorAll('.group-btn').forEach((btn, i) => {
+        function selectHead(idx) {
+            currentHead = idx;
+            document.querySelectorAll('.head-btn').forEach((btn, i) => {
                 btn.classList.toggle('selected', i === idx);
             });
             updatePreview();
@@ -562,7 +562,7 @@ const MOUTHS = {
 
         function selectVariant(type, idx) {
             if (type === 'eyes') currentEyes = idx;
-            else if (type === 'faces') currentFaces = idx;
+            else if (type === 'noses') currentNoses = idx;
             else if (type === 'mouths') currentMouths = idx;
 
             const container = document.getElementById(`${type}-selector`);
@@ -574,13 +574,13 @@ const MOUTHS = {
         }
 
         function loadKnownCombo(combo) {
-            selectGroup(combo.group);
+            selectHead(combo.head);
             selectVariant('eyes', combo.eyes);
-            selectVariant('faces', combo.faces);
+            selectVariant('noses', combo.noses);
             selectVariant('mouths', combo.mouths);
 
             // Scroll variant selectors to show selected items
-            ['eyes', 'faces', 'mouths'].forEach(type => {
+            ['eyes', 'noses', 'mouths'].forEach(type => {
                 const container = document.getElementById(`${type}-selector`);
                 const selected = container.querySelector('.selected');
                 if (selected) selected.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -600,7 +600,7 @@ const MOUTHS = {
 
             try {
                 // Draw framework
-                const frameworkImg = await loadImage(FRAMEWORKS[currentGroup]);
+                const frameworkImg = await loadImage(FRAMEWORKS[currentHead]);
                 ctx.drawImage(frameworkImg, 0, 0, 288, 288);
 
                 // Draw variants in their positions based on template
@@ -608,9 +608,9 @@ const MOUTHS = {
                 const eyesImg = await loadImage(EYES[currentEyes]);
                 ctx.drawImage(eyesImg, 8 * scale, 16 * scale, 24 * scale, 8 * scale);
 
-                // Faces go in row 3, columns 1-3
-                const facesImg = await loadImage(FACES[currentFaces]);
-                ctx.drawImage(facesImg, 8 * scale, 24 * scale, 24 * scale, 8 * scale);
+                // Noses go in row 3, columns 1-3
+                const nosesImg = await loadImage(NOSES[currentNoses]);
+                ctx.drawImage(nosesImg, 8 * scale, 24 * scale, 24 * scale, 8 * scale);
 
                 // Mouths go in rows 4-5, columns 1-3
                 const mouthsImg = await loadImage(MOUTHS[currentMouths]);
@@ -622,21 +622,21 @@ const MOUTHS = {
         }
 
         function updateInfo() {
-            const group = GROUPS[currentGroup];
-            const pattern = GROUP_TO_PATTERN[currentGroup];
+            const head = HEADS[currentHead];
+            const pattern = HEAD_TO_PATTERN[currentHead];
 
-            document.getElementById('info-group').textContent = `G${currentGroup.toString().padStart(2, '0')}`;
-            document.getElementById('info-template').textContent = `T${group.template.toString().padStart(2, '0')}`;
+            document.getElementById('info-head').textContent = `G${currentHead.toString().padStart(2, '0')}`;
+            document.getElementById('info-template').textContent = `T${head.template.toString().padStart(2, '0')}`;
             document.getElementById('info-eyes').textContent = currentEyes;
-            document.getElementById('info-faces').textContent = currentFaces;
+            document.getElementById('info-noses').textContent = currentNoses;
             document.getElementById('info-mouths').textContent = currentMouths;
 
-            document.getElementById('info-base-addr').textContent = group.baseAddr;
-            document.getElementById('info-tile-count').textContent = group.tileCount;
+            document.getElementById('info-base-addr').textContent = head.baseAddr;
+            document.getElementById('info-tile-count').textContent = head.tileCount;
             document.getElementById('info-pattern').textContent = PATTERN_DESC[pattern] || `P${pattern}`;
 
             // Update template visualization
-            updateTemplateVis(group.grid);
+            updateTemplateVis(head.grid);
         }
 
         function updateTemplateVis(grid) {
@@ -654,16 +654,16 @@ const MOUTHS = {
         }
 
         function randomize() {
-            selectGroup(Math.floor(Math.random() * 19));
+            selectHead(Math.floor(Math.random() * 19));
             selectVariant('eyes', Math.floor(Math.random() * 20));
-            selectVariant('faces', Math.floor(Math.random() * 20));
+            selectVariant('noses', Math.floor(Math.random() * 20));
             selectVariant('mouths', Math.floor(Math.random() * 20));
         }
 
         function downloadPortrait() {
             const canvas = document.getElementById('portrait-canvas');
             const link = document.createElement('a');
-            link.download = `portrait_G${currentGroup}_E${currentEyes}_F${currentFaces}_M${currentMouths}.png`;
+            link.download = `portrait_G${currentHead}_E${currentEyes}_F${currentNoses}_M${currentMouths}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         }

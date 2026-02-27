@@ -16,9 +16,9 @@
 ## 組件式結構
 
 大眾臉頭像由三部分組成：
-1. **共用框架** (頭盔、邊框) — 同 Group 內共用
-2. **可替換組件** (眼睛、臉部、嘴巴) — 每個頭像不同
-3. **Group 基底** — 決定 tile 資料的 ROM 位置
+1. **共用框架** (頭盔、邊框) — 同 Head 內共用
+2. **可替換組件** (眼睛、鼻子、嘴巴) — 每個頭像不同
+3. **Head 基底** — 決定 tile 資料的 ROM 位置
 
 ```
 6×6 格子 Layout:
@@ -30,7 +30,7 @@
     ├───┼───┼───┼───┼───┼───┤
  R2 │ F │ E │ E │ E │ F │ F │  ← 眼睛區 (C1-C3 可替換)
     ├───┼───┼───┼───┼───┼───┤
- R3 │ F │ A │ A │ A │ F │ F │  ← 臉部區 (C1-C3 可替換)
+ R3 │ F │ A │ A │ A │ F │ F │  ← 鼻子區 (C1-C3 可替換)
     ├───┼───┼───┼───┼───┼───┤
  R4 │ F │ M │ M │ M │ F │ F │  ← 嘴巴上 (C1-C3 可替換)
     ├───┼───┼───┼───┼───┼───┤
@@ -39,7 +39,7 @@
 
 F = 框架 tile (固定)
 E = 眼睛 tile (可替換)
-A = 臉部 tile (可替換)
+A = 鼻子 tile (可替換)
 M = 嘴巴 tile (可替換)
 ```
 
@@ -56,39 +56,39 @@ INDEX_TABLE_3 = 0x1F140    // 值範圍 0-4
 
 // 變體資料位置
 EYES_START   = 0x1DE14    // 20 組 × 3 tiles × 16 bytes = 960 bytes
-FACES_START  = 0x1E1D4    // 20 組 × 3 tiles × 16 bytes = 960 bytes
+NOSES_START  = 0x1E1D4    // 20 組 × 3 tiles × 16 bytes = 960 bytes
 MOUTHS_START = 0x1E594    // 20 組 × 6 tiles × 16 bytes = 1920 bytes
 
-// 19 個 Group 定義 (ROM 偏移, Tile 數量)
-GROUPS = [
-    (0x1C194, 24),  // G00
-    (0x1C314, 24),  // G01
-    (0x1C494, 24),  // G02
-    (0x1C614, 24),  // G03
-    (0x1C794, 22),  // G04
-    (0x1C914, 21),  // G05
-    (0x1CA94, 20),  // G06
-    (0x1CC14, 20),  // G07
-    (0x1CD94, 21),  // G08
-    (0x1CF14, 24),  // G09
-    (0x1D094, 21),  // G10
-    (0x1D214, 21),  // G11
-    (0x1D394, 22),  // G12
-    (0x1D514, 22),  // G13
-    (0x1D694, 24),  // G14 (舊稱 Group A)
-    (0x1D814, 24),  // G15
-    (0x1D994, 24),  // G16
-    (0x1DB14, 24),  // G17 (舊稱 Group D)
-    (0x1DC94, 24),  // G18
+// 19 個 Head 定義 (ROM 偏移, Tile 數量)
+HEADS = [
+    (0x1C194, 24),  // H00
+    (0x1C314, 24),  // H01
+    (0x1C494, 24),  // H02
+    (0x1C614, 24),  // H03
+    (0x1C794, 22),  // H04
+    (0x1C914, 21),  // H05
+    (0x1CA94, 20),  // H06
+    (0x1CC14, 20),  // H07
+    (0x1CD94, 21),  // H08
+    (0x1CF14, 24),  // H09
+    (0x1D094, 21),  // H10
+    (0x1D214, 21),  // H11
+    (0x1D394, 22),  // H12
+    (0x1D514, 22),  // H13
+    (0x1D694, 24),  // H14 (舊稱 Head A)
+    (0x1D814, 24),  // H15
+    (0x1D994, 24),  // H16
+    (0x1DB14, 24),  // H17 (舊稱 Head D)
+    (0x1DC94, 24),  // H18
 ]
 
-// Group → Template 映射 (2026-02-27 更新: 1:1 對應)
-// 共 20 個 Group (G00-G19) 對應 20 個 Template (T00-T19)
-GROUP_TO_TEMPLATE = {
-    0: 0, 1: 1, 2: 2, 3: 3, 4: 4,      // G00-G04: P1 (24-tile)
-    5: 5, 6: 6, 7: 7, 8: 8, 9: 9,      // G05-G09
-    10: 10, 11: 11, 12: 12, 13: 13, 14: 14,  // G10-G14
-    15: 15, 16: 16, 17: 17, 18: 18, 19: 19,  // G15-G19: P1 (24-tile)
+// Head → Template 映射 (2026-02-27 更新: 1:1 對應)
+// 共 20 個 Head (H00-H19) 對應 20 個 Template (T00-T19)
+HEAD_TO_TEMPLATE = {
+    0: 0, 1: 1, 2: 2, 3: 3, 4: 4,      // H00-H04: P1 (24-tile)
+    5: 5, 6: 6, 7: 7, 8: 8, 9: 9,      // H05-H09
+    10: 10, 11: 11, 12: 12, 13: 13, 14: 14,  // H10-H14
+    15: 15, 16: 16, 17: 17, 18: 18, 19: 19,  // H15-H19: P1 (24-tile)
 }
 
 // 8 種 Pattern 類型
@@ -103,8 +103,8 @@ PATTERN_TYPES = {
     8: "tile 12 重複 (max=21)",
 }
 
-// Group → Pattern 映射
-GROUP_TO_PATTERN = {
+// Head → Pattern 映射
+HEAD_TO_PATTERN = {
     0: 1, 1: 1, 2: 1, 3: 1,
     4: 2, 5: 3, 6: 4, 7: 5,
     8: 3, 9: 1, 10: 3,
@@ -120,7 +120,7 @@ function is_mob_portrait(portrait_index):
     return portrait_index >= 81
 ```
 
-## 步驟二: 獲取 Group 和變體索引 [待確認]
+## 步驟二: 獲取 Head 和變體索引 [待確認]
 
 ```
 function get_mob_portrait_params(portrait_index):
@@ -132,27 +132,27 @@ function get_mob_portrait_params(portrait_index):
     t2 = ROM[INDEX_TABLE_2 + table_index]  // 0-4
     t3 = ROM[INDEX_TABLE_3 + table_index]  // 0-4
 
-    // [待確認] 這三個值如何映射到 Group 和變體索引
+    // [待確認] 這三個值如何映射到 Head 和變體索引
     // 目前已知的映射關係不完全清楚
     // 可能需要額外的查表或計算
 
     return {
         table_values: [t1, t2, t3],
-        // group, eye_idx, face_idx, mouth_idx 的計算方式待確認
+        // head, eye_idx, nose_idx, mouth_idx 的計算方式待確認
     }
 ```
 
 ## 步驟三: 計算變體 Tile 編號
 
 ```
-// 變體公式 (相對於 Group 基底)
-function calculate_variant_tiles(eye_idx, face_idx, mouth_idx):
+// 變體公式 (相對於 Head 基底)
+function calculate_variant_tiles(eye_idx, nose_idx, mouth_idx):
     // 眼睛: 3 tiles per variant, 20 variants (tiles 120-179)
     eye_base = 120 + eye_idx * 3
     eye_tiles = [eye_base, eye_base + 1, eye_base + 2]
 
-    // 臉部: 3 tiles per variant, 20 variants (tiles 180-239)
-    face_base = 180 + face_idx * 3
+    // 鼻子: 3 tiles per variant, 20 variants (tiles 180-239)
+    face_base = 180 + nose_idx * 3
     face_tiles = [face_base, face_base + 1, face_base + 2]
 
     // 嘴巴: 6 tiles per variant, 20 variants (tiles 240-359)
@@ -177,7 +177,7 @@ function build_mob_layout(framework, eye_tiles, face_tiles, mouth_tiles):
     layout[2][2] = eye_tiles[1]
     layout[2][3] = eye_tiles[2]
 
-    // 填入臉部 (Row 3, C1-C3)
+    // 填入鼻子 (Row 3, C1-C3)
     layout[3][1] = face_tiles[0]
     layout[3][2] = face_tiles[1]
     layout[3][3] = face_tiles[2]
@@ -196,8 +196,8 @@ function build_mob_layout(framework, eye_tiles, face_tiles, mouth_tiles):
 ## 步驟五: 載入 Tile 資料
 
 ```
-function load_mob_tiles(group):
-    base_addr = GROUP_BASES[group]
+function load_mob_tiles(head):
+    base_addr = HEAD_BASES[head]
 
     // 載入足夠的 tiles (至少 360 個以涵蓋所有變體)
     tiles = []
@@ -213,18 +213,18 @@ function load_mob_tiles(group):
 
 ```
 function render_mob_portrait(portrait_index):
-    // [待確認] 獲取 Group 和變體索引
+    // [待確認] 獲取 Head 和變體索引
     params = get_mob_portrait_params(portrait_index)
-    group = params.group
+    head = params.head
     eye_idx = params.eye_idx
-    face_idx = params.face_idx
+    nose_idx = params.nose_idx
     mouth_idx = params.mouth_idx
 
     // 計算變體 tiles
-    variants = calculate_variant_tiles(eye_idx, face_idx, mouth_idx)
+    variants = calculate_variant_tiles(eye_idx, nose_idx, mouth_idx)
 
-    // 獲取框架 (可能需要根據 Group 和模板類型選擇)
-    framework = get_framework(group, params.template_type)
+    // 獲取框架 (可能需要根據 Head 和模板類型選擇)
+    framework = get_framework(head, params.template_type)
 
     // 組合完整 layout
     layout = build_mob_layout(framework,
@@ -233,7 +233,7 @@ function render_mob_portrait(portrait_index):
                               variants.mouth_tiles)
 
     // 載入 tile 資料
-    tiles = load_mob_tiles(group)
+    tiles = load_mob_tiles(head)
 
     // 繪製 48×48 頭像
     canvas = new_canvas(48, 48)
@@ -248,61 +248,61 @@ function render_mob_portrait(portrait_index):
 
 ## 已驗證的範例
 
-### P081 周泰 (Group A)
+### P081 周泰 (Head A)
 
 ```
-Group: A (基底 0x1D694)
-eye_idx: 17, face_idx: 18, mouth_idx: 16
+Head: A (基底 0x1D694)
+eye_idx: 17, nose_idx: 18, mouth_idx: 16
 
 Layout:
 [  0,   1,   4,   5,   8,   9],
 [  2,   3,   6,   7,  10,  11],
 [ 12, 171, 172, 173,  14,  15],  // 眼睛: 120 + 17*3 = 171
-[ 13, 234, 235, 236,  16,  17],  // 臉部: 180 + 18*3 = 234
+[ 13, 234, 235, 236,  16,  17],  // 鼻子: 180 + 18*3 = 234
 [ 18, 336, 337, 340,  20,  21],  // 嘴巴: 240 + 16*6 = 336
 [ 19, 338, 339, 341,  22,  23],
 ```
 
-### P082 孫翊 (Group A)
+### P082 孫翊 (Head A)
 
 ```
-Group: A (基底 0x1D694)
-eye_idx: 18, face_idx: 19, mouth_idx: 18
+Head: A (基底 0x1D694)
+eye_idx: 18, nose_idx: 19, mouth_idx: 18
 
 Layout:
 [  0,   1,   4,   5,   8,   9],
 [  2,   3,   6,   7,  10,  11],
 [ 12, 174, 175, 176,  14,  15],  // 眼睛: 120 + 18*3 = 174
-[ 13, 237, 238, 239,  16,  17],  // 臉部: 180 + 19*3 = 237
+[ 13, 237, 238, 239,  16,  17],  // 鼻子: 180 + 19*3 = 237
 [ 18, 348, 349, 352,  20,  21],  // 嘴巴: 240 + 18*6 = 348
 [ 19, 350, 351, 353,  22,  23],
 ```
 
-### P083 孫瑜 (Group B)
+### P083 孫瑜 (Head B)
 
 ```
-Group: B (基底 0x1C194)
-eye_idx: 2, face_idx: 1, mouth_idx: 2
+Head: B (基底 0x1C194)
+eye_idx: 2, nose_idx: 1, mouth_idx: 2
 
-// 注意: Group B 的變體 tile 編號需要加上 Group 偏移
-Layout (相對於 Group B 基底):
+// 注意: Head B 的變體 tile 編號需要加上 Head 偏移
+Layout (相對於 Head B 基底):
 [  0,   1,   4,   5,   8,   9],
 [  2,   3,   6,   7,  10,  11],
 [ 12, 462, 463, 464,  14,  15],  // 眼睛 (不同計算方式)
-[ 13, 519, 520, 521,  16,  17],  // 臉部
+[ 13, 519, 520, 521,  16,  17],  // 鼻子
 [ 18, 588, 589, 592,  20,  21],  // 嘴巴
 [ 19, 590, 591, 593,  22,  23],
 ```
 
-## 已知的 Group 成員
+## 已知的 Head 成員
 
 | 新編號 | 舊編號 | 基底位址 | 已確認成員 |
 |--------|--------|----------|------------|
-| G00 | B | 0x1C194 | P083 孫瑜, P185 傅士仁, P186 周倉 |
-| G05 | C | 0x1C914 | P131 法正, P165 張昭, P166 張紘, P204 韓玄, P211 鞏志 |
-| G12 | E | 0x1D394 | P168 虞翻 |
-| G14 | A | 0x1D694 | P081 周泰, P082 孫翊, P084 孫桓, P182 糜芳 |
-| G17 | D | 0x1DB14 | P195 徐盛 |
+| H00 | B | 0x1C194 | P083 孫瑜, P185 傅士仁, P186 周倉 |
+| H05 | C | 0x1C914 | P131 法正, P165 張昭, P166 張紘, P204 韓玄, P211 鞏志 |
+| H12 | E | 0x1D394 | P168 虞翻 |
+| H14 | A | 0x1D694 | P081 周泰, P082 孫翊, P084 孫桓, P182 糜芳 |
+| H17 | D | 0x1DB14 | P195 徐盛 |
 
 ## 索引表資料範例
 
@@ -312,7 +312,7 @@ portrait_index → (T1, T2, T3)
 P081 周泰:    (0, 2, 0)
 P082 孫翊:    (0, 0, 0)
 P083 孫瑜:    (0, 2, 1)
-P084 孫桓:    (0, 2, 1)  // 與 P083 相同，但不同 Group
+P084 孫桓:    (0, 2, 1)  // 與 P083 相同，但不同 Head
 P131 法正:    (3, 3, 4)
 P165 張昭:    (1, 2, 0)
 P182 糜芳:    (0, 3, 3)
@@ -320,24 +320,24 @@ P182 糜芳:    (0, 3, 3)
 
 ## 已解決問題
 
-1. **Group 框架系統**: 確認 20 個 Group (G00-G19) 的 ROM 位置 (2026-02-27 更新)
-2. **Template 排列表**: 20 個 Template 於 0x1ED14，與 20 個 Group 1:1 對應
+1. **Head 框架系統**: 確認 20 個 Head (H00-H19) 的 ROM 位置 (2026-02-27 更新)
+2. **Template 排列表**: 20 個 Template 於 0x1ED14，與 20 個 Head 1:1 對應
 3. **8 種 Pattern 類型**: 根據 tile 重複方式分類
-4. **Group-Template-Pattern 映射**: 完整對照表已建立
+4. **Head-Template-Pattern 映射**: 完整對照表已建立
 
 ## 已解決問題 (2026-02-27 更新)
 
-1. **T04 確認被使用**: 發現 0x1C014 處有獨立的 Group framework (24 tiles)
-   - P138 高沛 現在正確映射到 G00
-   - 共 20 個 Group (G00-G19) 對應 20 個 Template (T00-T19)，1:1 映射
-   - 所有現有 Group 編號已遞增 1
+1. **T04 確認被使用**: 發現 0x1C014 處有獨立的 Head framework (24 tiles)
+   - P138 高沛 現在正確映射到 H00
+   - 共 20 個 Head (H00-H19) 對應 20 個 Template (T00-T19)，1:1 映射
+   - 所有現有 Head 編號已遞增 1
 
 ## 待解決問題
 
-1. **portrait_id → Group 映射**: 174 個大眾臉頭像如何對應到 20 個 Group？
-   - 三個索引表 (T1, T2, T3) 與 Group 的關係待確認
+1. **portrait_id → Head 映射**: 174 個大眾臉頭像如何對應到 20 個 Head？
+   - 三個索引表 (T1, T2, T3) 與 Head 的關係待確認
 
-2. **變體索引計算**: T1, T2, T3 如何轉換為 eye_idx, face_idx, mouth_idx？
+2. **變體索引計算**: T1, T2, T3 如何轉換為 eye_idx, nose_idx, mouth_idx？
    - 值範圍 0-4，但變體索引範圍是 0-19
    - 可能存在二級查表或公式
 

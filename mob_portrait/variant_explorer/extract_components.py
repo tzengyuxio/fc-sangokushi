@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Extract all Group frameworks and variant components for the web explorer tool.
+Extract all Head frameworks and variant components for the web explorer tool.
 """
 
 import os
@@ -16,37 +16,37 @@ PALETTE = [
     (255, 255, 255),  # Index 3: White
 ]
 
-# 20 Groups with ROM addresses and tile counts
-# 2026-02-27: 發現 0x1C014 有被使用 (T04)，重新編號所有 Groups
-GROUPS = [
-    (0x1C014, 24),  # G00 - 新發現! 使用 T00
-    (0x1C194, 24),  # G01 (舊 G00)
-    (0x1C314, 24),  # G02 (舊 G01)
-    (0x1C494, 24),  # G03 (舊 G02)
-    (0x1C614, 24),  # G04 (舊 G03) - 使用 T04!
-    (0x1C794, 22),  # G05 (舊 G04)
-    (0x1C914, 21),  # G06 (舊 G05)
-    (0x1CA94, 20),  # G07 (舊 G06)
-    (0x1CC14, 20),  # G08 (舊 G07)
-    (0x1CD94, 21),  # G09 (舊 G08)
-    (0x1CF14, 24),  # G10 (舊 G09)
-    (0x1D094, 21),  # G11 (舊 G10)
-    (0x1D214, 21),  # G12 (舊 G11)
-    (0x1D394, 22),  # G13 (舊 G12)
-    (0x1D514, 22),  # G14 (舊 G13)
-    (0x1D694, 24),  # G15 (舊 G14)
-    (0x1D814, 24),  # G16 (舊 G15)
-    (0x1D994, 24),  # G17 (舊 G16)
-    (0x1DB14, 24),  # G18 (舊 G17)
-    (0x1DC94, 24),  # G19 (舊 G18)
+# 20 Heads with ROM addresses and tile counts
+# 2026-02-27: 發現 0x1C014 有被使用，重新編號所有 Heads
+HEADS = [
+    (0x1C014, 24),  # H00
+    (0x1C194, 24),  # H01
+    (0x1C314, 24),  # H02
+    (0x1C494, 24),  # H03
+    (0x1C614, 24),  # H04
+    (0x1C794, 22),  # H05
+    (0x1C914, 21),  # H06
+    (0x1CA94, 20),  # H07
+    (0x1CC14, 20),  # H08
+    (0x1CD94, 21),  # H09
+    (0x1CF14, 24),  # H10
+    (0x1D094, 21),  # H11
+    (0x1D214, 21),  # H12
+    (0x1D394, 22),  # H13
+    (0x1D514, 22),  # H14
+    (0x1D694, 24),  # H15
+    (0x1D814, 24),  # H16
+    (0x1D994, 24),  # H17
+    (0x1DB14, 24),  # H18
+    (0x1DC94, 24),  # H19
 ]
 
-# Group to Template mapping (現在是 1:1 對應)
-GROUP_TO_TEMPLATE = {i: i for i in range(20)}
+# Head to Template mapping (1:1 對應)
+HEAD_TO_TEMPLATE = {i: i for i in range(20)}
 
 # Variant data locations
 EYES_START = 0x1DE14    # 20 variants × 3 tiles × 16 bytes
-FACES_START = 0x1E1D4   # 20 variants × 3 tiles × 16 bytes
+NOSES_START = 0x1E1D4   # 20 variants × 3 tiles × 16 bytes
 MOUTHS_START = 0x1E594  # 20 variants × 6 tiles × 16 bytes
 
 TEMPLATE_START = 0x1ED14  # 20 templates × 36 bytes
@@ -97,21 +97,21 @@ def read_template(rom_data, template_idx):
     return grid
 
 
-def extract_group_framework(rom_data, group_idx, output_dir, scale=3):
-    """Extract a group's framework tiles (without variants) as individual tile images."""
-    base_addr, tile_count = GROUPS[group_idx]
-    template_idx = GROUP_TO_TEMPLATE[group_idx]
+def extract_head_framework(rom_data, head_idx, output_dir, scale=3):
+    """Extract a head's framework tiles (without variants) as individual tile images."""
+    base_addr, tile_count = HEADS[head_idx]
+    template_idx = HEAD_TO_TEMPLATE[head_idx]
     template = read_template(rom_data, template_idx)
 
     # Extract each tile
-    group_dir = os.path.join(output_dir, f"group_{group_idx:02d}")
-    os.makedirs(group_dir, exist_ok=True)
+    head_dir = os.path.join(output_dir, f"head_{head_idx:02d}")
+    os.makedirs(head_dir, exist_ok=True)
 
     for tile_idx in range(tile_count):
         tile_offset = base_addr + tile_idx * 16
         tile_data = decode_tile(rom_data[tile_offset:tile_offset + 16])
         img = tile_to_image(tile_data, scale)
-        img.save(os.path.join(group_dir, f"tile_{tile_idx:02d}.png"))
+        img.save(os.path.join(head_dir, f"tile_{tile_idx:02d}.png"))
 
     # Create framework image (48x48 at scale)
     framework_img = Image.new('RGB', (48 * scale, 48 * scale), (64, 64, 64))
@@ -125,14 +125,14 @@ def extract_group_framework(rom_data, group_idx, output_dir, scale=3):
                 tile_img = tile_to_image(tile_data, scale)
                 framework_img.paste(tile_img, (col * 8 * scale, row * 8 * scale))
 
-    framework_img.save(os.path.join(output_dir, f"framework_{group_idx:02d}.png"))
+    framework_img.save(os.path.join(output_dir, f"framework_{head_idx:02d}.png"))
 
     # Also save the template info
     return template
 
 
 def extract_variants(rom_data, output_dir, scale=3):
-    """Extract all variant components (eyes, faces, mouths)."""
+    """Extract all variant components (eyes, noses, mouths)."""
     variants_dir = os.path.join(output_dir, "variants")
     os.makedirs(variants_dir, exist_ok=True)
 
@@ -148,17 +148,17 @@ def extract_variants(rom_data, output_dir, scale=3):
             var_img.paste(tile_img, (tile_idx * 8 * scale, 0))
         var_img.save(os.path.join(eyes_dir, f"eyes_{var_idx:02d}.png"))
 
-    # Faces: 20 variants × 3 tiles
-    faces_dir = os.path.join(variants_dir, "faces")
-    os.makedirs(faces_dir, exist_ok=True)
+    # Noses: 20 variants × 3 tiles
+    noses_dir = os.path.join(variants_dir, "noses")
+    os.makedirs(noses_dir, exist_ok=True)
     for var_idx in range(20):
         var_img = Image.new('RGB', (24 * scale, 8 * scale), (0, 0, 0))
         for tile_idx in range(3):
-            offset = FACES_START + (var_idx * 3 + tile_idx) * 16
+            offset = NOSES_START + (var_idx * 3 + tile_idx) * 16
             tile_data = decode_tile(rom_data[offset:offset + 16])
             tile_img = tile_to_image(tile_data, scale)
             var_img.paste(tile_img, (tile_idx * 8 * scale, 0))
-        var_img.save(os.path.join(faces_dir, f"faces_{var_idx:02d}.png"))
+        var_img.save(os.path.join(noses_dir, f"noses_{var_idx:02d}.png"))
 
     # Mouths: 20 variants × 6 tiles (2 rows of 3)
     mouths_dir = os.path.join(variants_dir, "mouths")
@@ -180,14 +180,14 @@ def extract_variants(rom_data, output_dir, scale=3):
 def generate_template_json(rom_data):
     """Generate JSON data for all templates."""
     templates = {}
-    for g_idx in range(20):
-        t_idx = GROUP_TO_TEMPLATE[g_idx]
+    for h_idx in range(20):
+        t_idx = HEAD_TO_TEMPLATE[h_idx]
         template = read_template(rom_data, t_idx)
-        templates[g_idx] = {
+        templates[h_idx] = {
             "template_idx": t_idx,
             "grid": template,
-            "base_addr": hex(GROUPS[g_idx][0]),
-            "tile_count": GROUPS[g_idx][1],
+            "base_addr": hex(HEADS[h_idx][0]),
+            "tile_count": HEADS[h_idx][1],
         }
     return templates
 
@@ -200,35 +200,35 @@ def main():
     with open(ROM_PATH, "rb") as f:
         rom_data = f.read()
 
-    print("Extracting Group frameworks...")
+    print("Extracting Head frameworks...")
     templates_info = {}
-    for g_idx in range(20):
-        print(f"  Group {g_idx:02d}...")
-        template = extract_group_framework(rom_data, g_idx, output_dir)
-        templates_info[g_idx] = {
-            "template_idx": GROUP_TO_TEMPLATE[g_idx],
+    for h_idx in range(20):
+        print(f"  Head {h_idx:02d}...")
+        template = extract_head_framework(rom_data, h_idx, output_dir)
+        templates_info[h_idx] = {
+            "template_idx": HEAD_TO_TEMPLATE[h_idx],
             "grid": template,
-            "base_addr": hex(GROUPS[g_idx][0]),
-            "tile_count": GROUPS[g_idx][1],
+            "base_addr": hex(HEADS[h_idx][0]),
+            "tile_count": HEADS[h_idx][1],
         }
 
-    print("Extracting variants (eyes, faces, mouths)...")
+    print("Extracting variants (eyes, noses, mouths)...")
     extract_variants(rom_data, output_dir)
 
     # Generate JavaScript data file
     print("Generating JavaScript data file...")
     with open(os.path.join(output_dir, "data.js"), "w") as f:
         f.write("// Auto-generated data for variant explorer\n\n")
-        f.write("const GROUPS = [\n")
-        for g_idx in range(20):
-            info = templates_info[g_idx]
+        f.write("const HEADS = [\n")
+        for h_idx in range(20):
+            info = templates_info[h_idx]
             grid_str = str(info["grid"]).replace("None", "null")
-            f.write(f"  {{ idx: {g_idx}, template: {info['template_idx']}, ")
+            f.write(f"  {{ idx: {h_idx}, template: {info['template_idx']}, ")
             f.write(f"baseAddr: \"{info['base_addr']}\", tileCount: {info['tile_count']}, ")
             f.write(f"grid: {grid_str} }},\n")
         f.write("];\n\n")
 
-        f.write("const VARIANT_COUNTS = { eyes: 20, faces: 20, mouths: 20 };\n")
+        f.write("const VARIANT_COUNTS = { eyes: 20, noses: 20, mouths: 20 };\n")
 
     print("Done! Assets generated in:", output_dir)
 

@@ -1,6 +1,6 @@
 // Auto-generated data for variant explorer
 
-const GROUPS = [
+const HEADS = [
   { idx: 0, template: 0, baseAddr: "0x1c014", tileCount: 24, grid: [[0, 1, 4, 5, 8, 9], [2, 3, 6, 7, 10, 11], [12, null, null, null, 14, 15], [13, null, null, null, 16, 17], [18, null, null, null, 20, 21], [19, null, null, null, 22, 23]] },
   { idx: 1, template: 1, baseAddr: "0x1c194", tileCount: 24, grid: [[0, 1, 4, 5, 8, 9], [2, 3, 6, 7, 10, 11], [12, null, null, null, 14, 15], [13, null, null, null, 16, 17], [18, null, null, null, 20, 21], [19, null, null, null, 22, 23]] },
   { idx: 2, template: 2, baseAddr: "0x1c314", tileCount: 24, grid: [[0, 1, 4, 5, 8, 9], [2, 3, 6, 7, 10, 11], [12, null, null, null, 14, 15], [13, null, null, null, 16, 17], [18, null, null, null, 20, 21], [19, null, null, null, 22, 23]] },
@@ -23,4 +23,4 @@ const GROUPS = [
   { idx: 19, template: 19, baseAddr: "0x1dc94", tileCount: 24, grid: [[0, 1, 4, 5, 8, 9], [2, 3, 6, 7, 10, 11], [12, null, null, null, 14, 15], [13, null, null, null, 16, 17], [18, null, null, null, 20, 21], [19, null, null, null, 22, 23]] },
 ];
 
-const VARIANT_COUNTS = { eyes: 20, faces: 20, mouths: 20 };
+const VARIANT_COUNTS = { eyes: 20, noses: 20, mouths: 20 };
