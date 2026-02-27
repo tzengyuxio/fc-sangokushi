@@ -16,37 +16,33 @@ PALETTE = [
     (255, 255, 255),  # Index 3: White
 ]
 
-# 19 Groups with ROM addresses and tile counts
+# 20 Groups with ROM addresses and tile counts
+# 2026-02-27: 發現 0x1C014 有被使用 (T04)，重新編號所有 Groups
 GROUPS = [
-    (0x1C194, 24),  # G00
-    (0x1C314, 24),  # G01
-    (0x1C494, 24),  # G02
-    (0x1C614, 24),  # G03
-    (0x1C794, 22),  # G04
-    (0x1C914, 21),  # G05
-    (0x1CA94, 20),  # G06
-    (0x1CC14, 20),  # G07
-    (0x1CD94, 21),  # G08
-    (0x1CF14, 24),  # G09
-    (0x1D094, 21),  # G10
-    (0x1D214, 21),  # G11
-    (0x1D394, 22),  # G12
-    (0x1D514, 22),  # G13
-    (0x1D694, 24),  # G14
-    (0x1D814, 24),  # G15
-    (0x1D994, 24),  # G16
-    (0x1DB14, 24),  # G17
-    (0x1DC94, 24),  # G18
+    (0x1C014, 24),  # G00 - 新發現! 使用 T00
+    (0x1C194, 24),  # G01 (舊 G00)
+    (0x1C314, 24),  # G02 (舊 G01)
+    (0x1C494, 24),  # G03 (舊 G02)
+    (0x1C614, 24),  # G04 (舊 G03) - 使用 T04!
+    (0x1C794, 22),  # G05 (舊 G04)
+    (0x1C914, 21),  # G06 (舊 G05)
+    (0x1CA94, 20),  # G07 (舊 G06)
+    (0x1CC14, 20),  # G08 (舊 G07)
+    (0x1CD94, 21),  # G09 (舊 G08)
+    (0x1CF14, 24),  # G10 (舊 G09)
+    (0x1D094, 21),  # G11 (舊 G10)
+    (0x1D214, 21),  # G12 (舊 G11)
+    (0x1D394, 22),  # G13 (舊 G12)
+    (0x1D514, 22),  # G14 (舊 G13)
+    (0x1D694, 24),  # G15 (舊 G14)
+    (0x1D814, 24),  # G16 (舊 G15)
+    (0x1D994, 24),  # G17 (舊 G16)
+    (0x1DB14, 24),  # G18 (舊 G17)
+    (0x1DC94, 24),  # G19 (舊 G18)
 ]
 
-# Group to Template mapping (G04+ skips T04)
-GROUP_TO_TEMPLATE = {
-    0: 0, 1: 1, 2: 2, 3: 3,
-    4: 5, 5: 6, 6: 7, 7: 8,
-    8: 9, 9: 10, 10: 11,
-    11: 12, 12: 13, 13: 14,
-    14: 15, 15: 16, 16: 17, 17: 18, 18: 19,
-}
+# Group to Template mapping (現在是 1:1 對應)
+GROUP_TO_TEMPLATE = {i: i for i in range(20)}
 
 # Variant data locations
 EYES_START = 0x1DE14    # 20 variants × 3 tiles × 16 bytes
@@ -184,7 +180,7 @@ def extract_variants(rom_data, output_dir, scale=3):
 def generate_template_json(rom_data):
     """Generate JSON data for all templates."""
     templates = {}
-    for g_idx in range(19):
+    for g_idx in range(20):
         t_idx = GROUP_TO_TEMPLATE[g_idx]
         template = read_template(rom_data, t_idx)
         templates[g_idx] = {
@@ -206,7 +202,7 @@ def main():
 
     print("Extracting Group frameworks...")
     templates_info = {}
-    for g_idx in range(19):
+    for g_idx in range(20):
         print(f"  Group {g_idx:02d}...")
         template = extract_group_framework(rom_data, g_idx, output_dir)
         templates_info[g_idx] = {
@@ -224,7 +220,7 @@ def main():
     with open(os.path.join(output_dir, "data.js"), "w") as f:
         f.write("// Auto-generated data for variant explorer\n\n")
         f.write("const GROUPS = [\n")
-        for g_idx in range(19):
+        for g_idx in range(20):
             info = templates_info[g_idx]
             grid_str = str(info["grid"]).replace("None", "null")
             f.write(f"  {{ idx: {g_idx}, template: {info['template_idx']}, ")
