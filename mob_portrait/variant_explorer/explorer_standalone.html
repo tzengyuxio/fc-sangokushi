@@ -50,6 +50,8 @@
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 5px;
+            margin-bottom: 15px;
+            position: relative;
         }
         .head-btn {
             background: #333;
@@ -60,6 +62,7 @@
             cursor: pointer;
             font-size: 12px;
             transition: all 0.2s;
+            position: relative;
         }
         .head-btn:hover {
             background: #444;
@@ -69,6 +72,27 @@
             background: #1a4a1a;
             border-color: #4f4;
             color: #4f4;
+        }
+        /* Hover preview tooltip */
+        .head-preview {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            background: #1a1a1a;
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .head-preview img {
+            display: block;
+            image-rendering: pixelated;
+        }
+        .head-preview .label {
+            text-align: center;
+            color: #aaa;
+            font-size: 11px;
+            margin-top: 4px;
         }
 
         /* Variant selectors */
@@ -232,21 +256,27 @@
     </style>
 </head>
 <body>
+    <!-- Hover preview tooltip -->
+    <div class="head-preview" id="head-preview">
+        <img id="head-preview-img" width="96" height="96">
+        <div class="label" id="head-preview-label">H00</div>
+    </div>
+
     <h1>大眾臉頭像探索器</h1>
 
     <div class="container">
         <!-- Left Panel: Head & Variant Selection -->
         <div class="panel">
-            <h2>選擇 Head 框架</h2>
+            <h2>Head (H00-H19)</h2>
             <div class="head-grid" id="head-selector"></div>
 
-            <h3>眼睛 (Eyes)</h3>
+            <h3>Eye (0-4)</h3>
             <div class="variant-scroll" id="eyes-selector"></div>
 
-            <h3>鼻子 (Noses)</h3>
+            <h3>Nose (0-4)</h3>
             <div class="variant-scroll" id="noses-selector"></div>
 
-            <h3>嘴巴 (Mouths)</h3>
+            <h3>Mouth (0-4)</h3>
             <div class="variant-scroll" id="mouths-selector"></div>
         </div>
 
@@ -255,8 +285,9 @@
             <h2>頭像預覽</h2>
             <canvas id="portrait-canvas" width="288" height="288"></canvas>
             <div class="preview-info">
-                <p>Head: <code id="info-head">-</code> | Template: <code id="info-template">-</code></p>
-                <p>Eyes: <code id="info-eyes">-</code> | Noses: <code id="info-noses">-</code> | Mouths: <code id="info-mouths">-</code></p>
+                <p>Category: <code id="info-cat">-</code></p>
+                <p>H: <code id="info-head">-</code> | E: <code id="info-eyes">-</code> | N: <code id="info-noses">-</code> | M: <code id="info-mouths">-</code></p>
+                <p>Global: H<code id="info-head-global">-</code> | Template: <code id="info-template">-</code></p>
             </div>
 
             <div class="controls">
@@ -409,59 +440,68 @@ const MOUTHS = {
 // === EMBEDDED DATA END ===
 
         // Current selection state
-        let currentHead = 0;
-        let currentEyes = 0;
-        let currentNoses = 0;
-        let currentMouths = 0;
+        let currentHead = 0;  // global index 0-19
+        let currentEyes = 0;  // local index 0-4
+        let currentNoses = 0; // local index 0-4
+        let currentMouths = 0; // local index 0-4
+
+        // Computed category from head
+        function getCurrentCat() {
+            return Math.floor(currentHead / 5);
+        }
 
         // Image cache
         const imageCache = {};
 
         // Known combinations from the game
-        const KNOWN_COMBINATIONS = [
-            { name: "周泰", pid: "P081", head: 15, eyes: 17, noses: 18, mouths: 16 },
-            { name: "孫翊", pid: "P082", head: 15, eyes: 18, noses: 19, mouths: 18 },
-            { name: "孫瑜", pid: "P083", head: 1, eyes: 2, noses: 1, mouths: 2 },
-            { name: "孫桓", pid: "P084", head: 15, eyes: 18, noses: 15, mouths: 15 },
-            { name: "法正", pid: "P131", head: 6, eyes: 7, noses: 8, mouths: 6 },
-            { name: "張昭", pid: "P165", head: 6, eyes: 9, noses: 8, mouths: 6 },
-            { name: "張紘", pid: "P166", head: 6, eyes: 9, noses: 8, mouths: 8 },
-            { name: "虞翻", pid: "P168", head: 13, eyes: 13, noses: 10, mouths: 10 },
-            { name: "糜芳", pid: "P182", head: 18, eyes: 15, noses: 15, mouths: 15 },
-            { name: "傅士仁", pid: "P185", head: 19, eyes: 15, noses: 16, mouths: 17 },
-            { name: "周倉", pid: "P186", head: 17, eyes: 19, noses: 17, mouths: 19 },
-            { name: "徐盛", pid: "P195", head: 18, eyes: 16, noses: 19, mouths: 18 },
-            { name: "韓玄", pid: "P204", head: 8, eyes: 5, noses: 5, mouths: 5 },
-            { name: "鞏志", pid: "P211", head: 8, eyes: 5, noses: 6, mouths: 8 },
-            { name: "李肅", pid: "P120", head: 16, eyes: 17, noses: 17, mouths: 19 },
-            { name: "李傕", pid: "P121", head: 10, eyes: 13, noses: 14, mouths: 13 },
-            { name: "蔡邕", pid: "P122", head: 10, eyes: 14, noses: 12, mouths: 14 },
-            { name: "郭汜", pid: "P123", head: 11, eyes: 10, noses: 11, mouths: 12 },
-            { name: "張濟", pid: "P124", head: 11, eyes: 11, noses: 14, mouths: 13 },
-            { name: "華雄", pid: "P125", head: 16, eyes: 17, noses: 15, mouths: 16 },
-            { name: "徐榮", pid: "P127", head: 11, eyes: 13, noses: 10, mouths: 10 },
-            { name: "胡軫", pid: "P128", head: 16, eyes: 18, noses: 19, mouths: 18 },
-            { name: "趙岑", pid: "P129", head: 16, eyes: 18, noses: 15, mouths: 15 },
-            { name: "董旻", pid: "P130", head: 11, eyes: 14, noses: 13, mouths: 11 },
-            { name: "陳琳", pid: "P092", head: 5, eyes: 8, noses: 6, mouths: 7 },
-            { name: "田豐", pid: "P093", head: 5, eyes: 9, noses: 7, mouths: 9 },
-            { name: "沮授", pid: "P095", head: 5, eyes: 9, noses: 8, mouths: 6 },
-            { name: "高覽", pid: "P097", head: 1, eyes: 3, noses: 1, mouths: 2 },
-            { name: "袁譚", pid: "P099", head: 2, eyes: 0, noses: 1, mouths: 2 },
-            { name: "袁熙", pid: "P100", head: 2, eyes: 2, noses: 1, mouths: 2 },
-            { name: "黃祖", pid: "P111", head: 10, eyes: 12, noses: 11, mouths: 12 },
-            { name: "張允", pid: "P117", head: 4, eyes: 4, noses: 4, mouths: 3 },
-            { name: "蔡和", pid: "P118", head: 4, eyes: 3, noses: 4, mouths: 3 },
-            { name: "蔡中", pid: "P119", head: 4, eyes: 1, noses: 4, mouths: 3 },
-            { name: "鄧賢", pid: "P135", head: 6, eyes: 8, noses: 6, mouths: 7 },
-            { name: "高沛", pid: "P138", head: 0, eyes: 2, noses: 3, mouths: 1 },  // T04? Head待確認
-            { name: "文聘", pid: "P214", head: 18, eyes: 18, noses: 16, mouths: 17 },
-            { name: "馬鐵", pid: "P146", head: 2, eyes: 1, noses: 0, mouths: 0 },
-            { name: "侯選", pid: "P147", head: 17, eyes: 15, noses: 15, mouths: 15 },
-            { name: "李堪", pid: "P149", head: 3, eyes: 2, noses: 3, mouths: 1 },
-            { name: "程銀", pid: "P148", head: 2, eyes: 3, noses: 0, mouths: 0 },
-            { name: "張橫", pid: "P150", head: 17, eyes: 15, noses: 16, mouths: 17 },
-            { name: "闞澤", pid: "P189", head: 7, eyes: 7, noses: 7, mouths: 7 },
+                const KNOWN_COMBINATIONS = [
+            // Category 0
+            { name: "高沛", pid: "P138", cat: 0, h: 0, e: 2, n: 3, m: 1 },
+            { name: "孫瑜", pid: "P083", cat: 0, h: 1, e: 2, n: 1, m: 2 },
+            { name: "高覽", pid: "P097", cat: 0, h: 1, e: 3, n: 1, m: 2 },
+            { name: "袁譚", pid: "P099", cat: 0, h: 2, e: 0, n: 1, m: 2 },
+            { name: "袁熙", pid: "P100", cat: 0, h: 2, e: 2, n: 1, m: 2 },
+            { name: "馬鐵", pid: "P146", cat: 0, h: 2, e: 1, n: 0, m: 0 },
+            { name: "程銀", pid: "P148", cat: 0, h: 2, e: 3, n: 0, m: 0 },
+            { name: "李堪", pid: "P149", cat: 0, h: 3, e: 2, n: 3, m: 1 },
+            { name: "張允", pid: "P117", cat: 0, h: 4, e: 4, n: 4, m: 3 },
+            { name: "蔡和", pid: "P118", cat: 0, h: 4, e: 3, n: 4, m: 3 },
+            { name: "蔡中", pid: "P119", cat: 0, h: 4, e: 1, n: 4, m: 3 },
+            // Category 1
+            { name: "陳琳", pid: "P092", cat: 1, h: 0, e: 3, n: 1, m: 2 },
+            { name: "田豐", pid: "P093", cat: 1, h: 0, e: 4, n: 2, m: 4 },
+            { name: "沮授", pid: "P095", cat: 1, h: 0, e: 4, n: 3, m: 1 },
+            { name: "法正", pid: "P131", cat: 1, h: 1, e: 2, n: 3, m: 1 },
+            { name: "鄧賢", pid: "P135", cat: 1, h: 1, e: 3, n: 1, m: 2 },
+            { name: "張昭", pid: "P165", cat: 1, h: 1, e: 4, n: 3, m: 1 },
+            { name: "張紘", pid: "P166", cat: 1, h: 1, e: 4, n: 3, m: 3 },
+            { name: "闞澤", pid: "P189", cat: 1, h: 2, e: 2, n: 2, m: 2 },
+            { name: "韓玄", pid: "P204", cat: 1, h: 3, e: 0, n: 0, m: 0 },
+            { name: "鞏志", pid: "P211", cat: 1, h: 3, e: 0, n: 1, m: 3 },
+            // Category 2
+            { name: "黃祖", pid: "P111", cat: 2, h: 0, e: 2, n: 1, m: 2 },
+            { name: "李傕", pid: "P121", cat: 2, h: 0, e: 3, n: 4, m: 3 },
+            { name: "蔡邕", pid: "P122", cat: 2, h: 0, e: 4, n: 2, m: 4 },
+            { name: "郭汜", pid: "P123", cat: 2, h: 1, e: 0, n: 1, m: 2 },
+            { name: "張濟", pid: "P124", cat: 2, h: 1, e: 1, n: 4, m: 3 },
+            { name: "徐榮", pid: "P127", cat: 2, h: 1, e: 3, n: 0, m: 0 },
+            { name: "董旻", pid: "P130", cat: 2, h: 1, e: 4, n: 3, m: 1 },
+            { name: "虞翻", pid: "P168", cat: 2, h: 3, e: 3, n: 0, m: 0 },
+            // Category 3
+            { name: "周泰", pid: "P081", cat: 3, h: 0, e: 2, n: 3, m: 1 },
+            { name: "孫翊", pid: "P082", cat: 3, h: 0, e: 3, n: 4, m: 3 },
+            { name: "孫桓", pid: "P084", cat: 3, h: 0, e: 3, n: 0, m: 0 },
+            { name: "李肅", pid: "P120", cat: 3, h: 1, e: 2, n: 2, m: 4 },
+            { name: "華雄", pid: "P125", cat: 3, h: 1, e: 2, n: 0, m: 1 },
+            { name: "胡軫", pid: "P128", cat: 3, h: 1, e: 3, n: 4, m: 3 },
+            { name: "趙岑", pid: "P129", cat: 3, h: 1, e: 3, n: 0, m: 0 },
+            { name: "侯選", pid: "P147", cat: 3, h: 2, e: 0, n: 0, m: 0 },
+            { name: "張橫", pid: "P150", cat: 3, h: 2, e: 0, n: 1, m: 2 },
+            { name: "周倉", pid: "P186", cat: 3, h: 2, e: 4, n: 2, m: 4 },
+            { name: "糜芳", pid: "P182", cat: 3, h: 3, e: 0, n: 0, m: 0 },
+            { name: "徐盛", pid: "P195", cat: 3, h: 3, e: 1, n: 4, m: 3 },
+            { name: "文聘", pid: "P214", cat: 3, h: 3, e: 3, n: 1, m: 2 },
+            { name: "傅士仁", pid: "P185", cat: 3, h: 4, e: 0, n: 1, m: 2 },
         ];
 
         // Pattern descriptions
@@ -503,33 +543,64 @@ const MOUTHS = {
 
         // Initialize selectors
         function initSelectors() {
-            // Head buttons
+            // Head buttons (20 global buttons: H00-H19)
             const headSelector = document.getElementById('head-selector');
+            const preview = document.getElementById('head-preview');
+            const previewImg = document.getElementById('head-preview-img');
+            const previewLabel = document.getElementById('head-preview-label');
+
             for (let i = 0; i < 20; i++) {
                 const btn = document.createElement('button');
                 btn.className = 'head-btn' + (i === 0 ? ' selected' : '');
-                btn.textContent = `G${i.toString().padStart(2, '0')}`;
+                btn.textContent = `H${i.toString().padStart(2, '0')}`;
                 btn.onclick = () => selectHead(i);
+
+                // Hover preview
+                btn.onmouseenter = (e) => {
+                    previewImg.src = FRAMEWORKS[i];
+                    previewLabel.textContent = `H${i.toString().padStart(2, '0')} (Cat ${Math.floor(i / 5)})`;
+                    preview.style.display = 'block';
+                    preview.style.left = (e.pageX + 15) + 'px';
+                    preview.style.top = (e.pageY + 15) + 'px';
+                };
+                btn.onmousemove = (e) => {
+                    preview.style.left = (e.pageX + 15) + 'px';
+                    preview.style.top = (e.pageY + 15) + 'px';
+                };
+                btn.onmouseleave = () => {
+                    preview.style.display = 'none';
+                };
+
                 headSelector.appendChild(btn);
             }
 
-            // Variant selectors
-            initVariantSelector('eyes', 20, EYES);
-            initVariantSelector('noses', 20, NOSES);
-            initVariantSelector('mouths', 20, MOUTHS);
+            // Variant selectors (local 0-4) - initialized for category 0
+            updateVariantSelectors();
 
             // Known combinations
             initKnownList();
         }
 
-        function initVariantSelector(type, count, dataObj) {
+        function updateVariantSelectors() {
+            // Update all variant selectors based on current category
+            updateVariantSelector('eyes', EYES);
+            updateVariantSelector('noses', NOSES);
+            updateVariantSelector('mouths', MOUTHS);
+        }
+
+        function updateVariantSelector(type, dataObj) {
             const container = document.getElementById(`${type}-selector`);
+            container.innerHTML = ''; // Clear existing
             const isMouth = type === 'mouths';
-            for (let i = 0; i < count; i++) {
+            const baseIdx = getCurrentCat() * 5;
+            const currentVal = type === 'eyes' ? currentEyes : (type === 'noses' ? currentNoses : currentMouths);
+
+            for (let i = 0; i < 5; i++) {
+                const globalIdx = baseIdx + i;
                 const item = document.createElement('div');
-                item.className = 'variant-item' + (i === 0 ? ' selected' : '');
+                item.className = 'variant-item' + (i === currentVal ? ' selected' : '');
                 item.innerHTML = `
-                    <img src="${dataObj[i]}" width="72" height="${isMouth ? 48 : 24}">
+                    <img src="${dataObj[globalIdx]}" width="72" height="${isMouth ? 48 : 24}">
                     <span>#${i}</span>
                 `;
                 item.onclick = () => selectVariant(type, i);
@@ -544,18 +615,31 @@ const MOUTHS = {
                 item.className = 'known-item';
                 item.innerHTML = `
                     <span class="name">${combo.name}</span>
-                    <span class="idx">${combo.pid} | G${combo.head.toString().padStart(2, '0')}</span>
+                    <span class="idx">${combo.pid} | C${combo.cat} H${combo.h}</span>
                 `;
                 item.onclick = () => loadKnownCombo(combo);
                 container.appendChild(item);
             });
         }
 
-        function selectHead(idx) {
-            currentHead = idx;
-            document.querySelectorAll('.head-btn').forEach((btn, i) => {
-                btn.classList.toggle('selected', i === idx);
+        function selectHead(globalIdx) {
+            const oldCat = getCurrentCat();
+            currentHead = globalIdx;
+            const newCat = getCurrentCat();
+
+            // Update head button selection
+            document.querySelectorAll('#head-selector .head-btn').forEach((btn, i) => {
+                btn.classList.toggle('selected', i === globalIdx);
             });
+
+            // If category changed, reset variant indices and update variant selectors
+            if (oldCat !== newCat) {
+                currentEyes = 0;
+                currentNoses = 0;
+                currentMouths = 0;
+                updateVariantSelectors();
+            }
+
             updatePreview();
             updateInfo();
         }
@@ -574,17 +658,12 @@ const MOUTHS = {
         }
 
         function loadKnownCombo(combo) {
-            selectHead(combo.head);
-            selectVariant('eyes', combo.eyes);
-            selectVariant('noses', combo.noses);
-            selectVariant('mouths', combo.mouths);
-
-            // Scroll variant selectors to show selected items
-            ['eyes', 'noses', 'mouths'].forEach(type => {
-                const container = document.getElementById(`${type}-selector`);
-                const selected = container.querySelector('.selected');
-                if (selected) selected.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            });
+            // Convert category-local indices to global head
+            const globalHead = combo.cat * 5 + combo.h;
+            selectHead(globalHead);
+            selectVariant('eyes', combo.e);
+            selectVariant('noses', combo.n);
+            selectVariant('mouths', combo.m);
         }
 
         async function updatePreview() {
@@ -597,23 +676,29 @@ const MOUTHS = {
             ctx.fillRect(0, 0, 288, 288);
 
             const scale = 6;
+            const cat = getCurrentCat();
+
+            // Calculate global indices for variants
+            const globalEyes = cat * 5 + currentEyes;
+            const globalNoses = cat * 5 + currentNoses;
+            const globalMouths = cat * 5 + currentMouths;
 
             try {
-                // Draw framework
+                // Draw framework (currentHead is now global)
                 const frameworkImg = await loadImage(FRAMEWORKS[currentHead]);
                 ctx.drawImage(frameworkImg, 0, 0, 288, 288);
 
                 // Draw variants in their positions based on template
                 // Eyes go in row 2, columns 1-3
-                const eyesImg = await loadImage(EYES[currentEyes]);
+                const eyesImg = await loadImage(EYES[globalEyes]);
                 ctx.drawImage(eyesImg, 8 * scale, 16 * scale, 24 * scale, 8 * scale);
 
                 // Noses go in row 3, columns 1-3
-                const nosesImg = await loadImage(NOSES[currentNoses]);
+                const nosesImg = await loadImage(NOSES[globalNoses]);
                 ctx.drawImage(nosesImg, 8 * scale, 24 * scale, 24 * scale, 8 * scale);
 
                 // Mouths go in rows 4-5, columns 1-3
-                const mouthsImg = await loadImage(MOUTHS[currentMouths]);
+                const mouthsImg = await loadImage(MOUTHS[globalMouths]);
                 ctx.drawImage(mouthsImg, 8 * scale, 32 * scale, 24 * scale, 16 * scale);
 
             } catch (e) {
@@ -622,10 +707,14 @@ const MOUTHS = {
         }
 
         function updateInfo() {
+            const cat = getCurrentCat();
+            const localHead = currentHead % 5;
             const head = HEADS[currentHead];
             const pattern = HEAD_TO_PATTERN[currentHead];
 
-            document.getElementById('info-head').textContent = `G${currentHead.toString().padStart(2, '0')}`;
+            document.getElementById('info-cat').textContent = cat;
+            document.getElementById('info-head').textContent = localHead;
+            document.getElementById('info-head-global').textContent = currentHead.toString().padStart(2, '0');
             document.getElementById('info-template').textContent = `T${head.template.toString().padStart(2, '0')}`;
             document.getElementById('info-eyes').textContent = currentEyes;
             document.getElementById('info-noses').textContent = currentNoses;
@@ -654,16 +743,19 @@ const MOUTHS = {
         }
 
         function randomize() {
-            selectHead(Math.floor(Math.random() * 19));
-            selectVariant('eyes', Math.floor(Math.random() * 20));
-            selectVariant('noses', Math.floor(Math.random() * 20));
-            selectVariant('mouths', Math.floor(Math.random() * 20));
+            // Randomize global head (0-19), then local variant indices (0-4)
+            selectHead(Math.floor(Math.random() * 20));
+            selectVariant('eyes', Math.floor(Math.random() * 5));
+            selectVariant('noses', Math.floor(Math.random() * 5));
+            selectVariant('mouths', Math.floor(Math.random() * 5));
         }
 
         function downloadPortrait() {
             const canvas = document.getElementById('portrait-canvas');
             const link = document.createElement('a');
-            link.download = `portrait_G${currentHead}_E${currentEyes}_F${currentNoses}_M${currentMouths}.png`;
+            const cat = getCurrentCat();
+            const localHead = currentHead % 5;
+            link.download = `portrait_C${cat}_H${localHead}_E${currentEyes}_N${currentNoses}_M${currentMouths}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         }
