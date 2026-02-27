@@ -35,11 +35,11 @@ PRG ROM (256 KB = 16 banks)
 Byte  偏移   型別         欄位名        值域        說明
 ────  ─────  ───────────  ──────────    ─────────   ─────────────────────────
 B0    +0     int8 signed  Age           -28 ~ 65    年齡 (負=未出生)
-B1    +1     uint8        Body          15 ~ 100    體力/壽命 (推測)
+B1    +1     uint8        Body          15 ~ 100    身體
 B2    +2     uint8        Intelligence  15 ~ 100    智力
 B3    +3     uint8        Military      15 ~ 100    武力
 B4    +4     uint8        Charisma      15 ~ 100    魅力
-B5    +5     uint8        Luck          15 ~ 100    運氣/義理 (推測)
+B5    +5     uint8        Luck          15 ~ 100    運勢
 B6    +6     uint8        Loyalty       12 ~ 100    忠誠度
 B7    +7     bitfield     Status+Navy   0 ~ 3       見下方說明
 B8    +8     uint8 (lo)   Troops LSB    —           兵士數低位
