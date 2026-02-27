@@ -156,16 +156,19 @@
         /* Template visualization */
         .template-vis {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 2px;
+            grid-template-columns: repeat(6, 44px);
+            gap: 4px;
             margin-top: 10px;
-            font-size: 10px;
+            font-size: 14px;
         }
         .template-cell {
             background: #333;
-            padding: 4px;
-            text-align: center;
-            border-radius: 2px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
         }
         .template-cell.variant {
             background: #553;
@@ -220,7 +223,7 @@
 
         /* Known combinations panel */
         .known-list {
-            max-height: 300px;
+            max-height: 600px;
             overflow-y: auto;
             background: #1a1a1a;
             border-radius: 8px;
@@ -292,6 +295,7 @@
 
             <div class="controls">
                 <button class="btn" onclick="randomize()">隨機組合</button>
+                <button class="btn" onclick="toggleGrid()" id="grid-btn">顯示格線</button>
                 <button class="btn primary" onclick="downloadPortrait()">下載頭像</button>
             </div>
 
@@ -447,10 +451,18 @@ const MOUTHS = {
         let currentEyes = 0;  // local index 0-4
         let currentNoses = 0; // local index 0-4
         let currentMouths = 0; // local index 0-4
+        let showGrid = false; // toggle for tile grid lines
 
         // Computed category from head
         function getCurrentCat() {
             return Math.floor(currentHead / 5);
+        }
+
+        // Toggle grid display
+        function toggleGrid() {
+            showGrid = !showGrid;
+            document.getElementById('grid-btn').textContent = showGrid ? '隱藏格線' : '顯示格線';
+            updatePreview();
         }
 
         // Image cache
@@ -704,6 +716,56 @@ const MOUTHS = {
                 const mouthsImg = await loadImage(MOUTHS[globalMouths]);
                 ctx.drawImage(mouthsImg, 8 * scale, 32 * scale, 24 * scale, 16 * scale);
 
+                // Draw grid lines and labels if enabled
+                if (showGrid) {
+                    const tileSize = 8 * scale; // 48px per tile
+                    const head = HEADS[currentHead];
+                    const grid = head.grid;
+
+                    // Draw grid lines in red
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+                    ctx.lineWidth = 2;
+                    // Vertical lines
+                    for (let i = 1; i < 6; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(i * tileSize, 0);
+                        ctx.lineTo(i * tileSize, 288);
+                        ctx.stroke();
+                    }
+                    // Horizontal lines
+                    for (let i = 1; i < 6; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, i * tileSize);
+                        ctx.lineTo(288, i * tileSize);
+                        ctx.stroke();
+                    }
+
+                    // Draw labels in each cell
+                    ctx.font = 'bold 14px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    for (let row = 0; row < 6; row++) {
+                        for (let col = 0; col < 6; col++) {
+                            const val = grid[row][col];
+                            let label;
+                            if (val === null) {
+                                label = getVariantLabel(row, col) || '?';
+                                ctx.fillStyle = 'rgba(255, 255, 0, 0.9)'; // Yellow for variants
+                            } else {
+                                label = val.toString();
+                                ctx.fillStyle = 'rgba(255, 100, 100, 0.9)'; // Light red for fixed tiles
+                            }
+                            const x = col * tileSize + tileSize / 2;
+                            const y = row * tileSize + tileSize / 2;
+                            // Draw text shadow for visibility
+                            ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+                            ctx.lineWidth = 3;
+                            ctx.strokeText(label, x, y);
+                            ctx.fillText(label, x, y);
+                        }
+                    }
+                }
+
             } catch (e) {
                 console.error('Error loading images:', e);
             }
@@ -731,6 +793,16 @@ const MOUTHS = {
             updateTemplateVis(head.grid);
         }
 
+        // Get variant label for a specific grid position
+        function getVariantLabel(row, col) {
+            if (col < 1 || col > 3) return null;
+            if (row === 2) return `E${col}`; // Eyes: E1, E2, E3
+            if (row === 3) return `N${col}`; // Nose: N1, N2, N3
+            if (row === 4) return `M${col}`; // Mouth row 1: M1, M2, M3
+            if (row === 5) return `M${col + 3}`; // Mouth row 2: M4, M5, M6
+            return null;
+        }
+
         function updateTemplateVis(grid) {
             const container = document.getElementById('template-vis');
             container.innerHTML = '';
@@ -739,7 +811,11 @@ const MOUTHS = {
                     const cell = document.createElement('div');
                     const val = grid[row][col];
                     cell.className = 'template-cell' + (val === null ? ' variant' : '');
-                    cell.textContent = val === null ? '?' : val;
+                    if (val === null) {
+                        cell.textContent = getVariantLabel(row, col) || '?';
+                    } else {
+                        cell.textContent = val;
+                    }
                     container.appendChild(cell);
                 }
             }
