@@ -68,5 +68,7 @@ PORTRAIT_PALETTE = [
   - 19 個 Group 框架 (G00-G18)
   - 20 個 Template 排列模板 (0x1ED14)
   - 20 組眼睛/臉部/嘴巴變體
+  - 組件索引表: 0x1F034, 174 筆 × 5 bytes [Cat, Head, Eye, Nose, Mouth]
+  - 索引公式: `addr = 0x1F034 + (portrait_index - 81) * 5`
 - ✓ 頭像匯出工具 (portrait_export.py)
 - ✓ 大眾臉探索器 (mob_portrait/variant_explorer/)

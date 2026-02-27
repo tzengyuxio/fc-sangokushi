@@ -921,10 +921,10 @@
         // Get variant label for a specific grid position
         function getVariantLabel(row, col) {
             if (col < 1 || col > 3) return null;
-            if (row === 2) return `E${col}`; // Eyes: E1, E2, E3
-            if (row === 3) return `N${col}`; // Nose: N1, N2, N3
-            if (row === 4) return `M${col}`; // Mouth row 1: M1, M2, M3
-            if (row === 5) return `M${col + 3}`; // Mouth row 2: M4, M5, M6
+            if (row === 2) return `E${col - 1}`; // Eyes: E0, E1, E2
+            if (row === 3) return `N${col - 1}`; // Nose: N0, N1, N2
+            if (row === 4) return `M${[0, 1, 4][col - 1]}`; // Mouth row 1: M0, M1, M4
+            if (row === 5) return `M${[2, 3, 5][col - 1]}`; // Mouth row 2: M2, M3, M5
             return null;
         }
 
